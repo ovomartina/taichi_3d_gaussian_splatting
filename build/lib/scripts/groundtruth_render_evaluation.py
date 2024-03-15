@@ -9,7 +9,7 @@ from groundtruth_centroids_evaluation import point_cloud_groundtruth_comparison,
 import argparse
 import string
 
-
+use_colmap = True
 
 def apply_transformation(groundtruth_file_path, pointcloud_reconstruction_path, transform_path, show_pointclouds=False, show_plots=False):
     
@@ -21,11 +21,19 @@ def apply_transformation(groundtruth_file_path, pointcloud_reconstruction_path, 
                             [ 0.02184015 ,-0.47162058, -0.12345461, -0.21347023],
                             [ 0.    ,     0.  ,        0.  ,        1.        ]])
     room_1_transform = np.loadtxt(transform_path, delimiter=',', usecols=range(4))
-
+    
+    # R = room_1_transform[:3,:3]
+    # room_1_transform[:3,:3]= R.T
+    # room_1_transform[:3, 3]= -R.T @ room_1_transform[:3, 3]
+    print(room_1_transform)
+    
+    # np.savetxt(transform_path, room_1_transform, delimiter=',') # TO REMOVE
+    t = [1.57756, 0.762392,0.055458] # for sugar
     pc_reconstruction = o3d.io.read_point_cloud(pointcloud_reconstruction_path)   
     
     pc_reconstruction.transform(room_1_transform)
-        
+    pc_reconstruction.scale(0.487367, center=pc_reconstruction.get_center())
+    pc_reconstruction.translate(t)  
     return pc_reconstruction
 
 def align(target, source):
@@ -62,41 +70,50 @@ def main(transform_path: string, output_folder_path: string, groundtruth_path: s
     show_plots = False
     groundtruth_file_path = groundtruth_path
     
-    # Compare all reconstructed pointclouds in the folder
-    path = reconstruction_folder_path
-    fileList = os.listdir(path)
-    
-    completePointSet = None
-    count = 0
-    for pointcloud_reconstruction_path in fileList:
-        if pointcloud_reconstruction_path.startswith('pointcloud_'):
-            print(pointcloud_reconstruction_path)
-            reconstruction_pcd_aligned = apply_transformation(groundtruth_file_path, os.path.join(path+pointcloud_reconstruction_path), transform_path, show_pointclouds, show_plots) 
-            #Add transformed reconstruction pointcloud to completePointSet
-            if count==0:
-                completePointSet= np.asarray(reconstruction_pcd_aligned.points)
-                count+=1
-            else:
-                pc_reconstruction_load = np.asarray(reconstruction_pcd_aligned.points)
-                completePointSet = np.concatenate((completePointSet,pc_reconstruction_load), axis=0)
-            print("completePointSet len :", len(completePointSet))
-                
-    pc_groundtruth = o3d.io.read_point_cloud(groundtruth_file_path)
-    #Evaluate comprehensive pointcloud
-    completePointSet_pcd = o3d.geometry.PointCloud()
-    print(len(completePointSet_pcd.points))
-    completePointSet_pcd.points =  o3d.utility.Vector3dVector(completePointSet)
-    completePointSet_aligned = align(pc_groundtruth, completePointSet_pcd)
-    # completePointSet_aligned = completePointSet_pcd
-    
-    # Visualize pointcloud ensemble
-    pc_groundtruth.paint_uniform_color([0,0,1])
-    completePointSet_pcd.paint_uniform_color([0.5,0.5,0])
-    print("Compolete point set visual")
-    o3d.visualization.draw_geometries([completePointSet_pcd, pc_groundtruth, ])
-    
-    # Save .ply after it's been aligned with ICP
-    o3d.io.write_point_cloud(os.path.join(path, "completePointSet_aligned_icp.ply"), completePointSet_aligned)
+    if not use_colmap:
+        # Compare all reconstructed pointclouds in the folder
+        path = reconstruction_folder_path
+        fileList = os.listdir(path)
+        
+        completePointSet = None
+        count = 0
+        for pointcloud_reconstruction_path in fileList:
+            if pointcloud_reconstruction_path.startswith('pointcloud_'):
+                print(pointcloud_reconstruction_path)
+                reconstruction_pcd_aligned = apply_transformation(groundtruth_file_path, os.path.join(path+pointcloud_reconstruction_path), transform_path, show_pointclouds, show_plots) 
+                #Add transformed reconstruction pointcloud to completePointSet
+                if count==0:
+                    completePointSet= np.asarray(reconstruction_pcd_aligned.points)
+                    count+=1
+                else:
+                    pc_reconstruction_load = np.asarray(reconstruction_pcd_aligned.points)
+                    completePointSet = np.concatenate((completePointSet,pc_reconstruction_load), axis=0)
+                print("completePointSet len :", len(completePointSet))
+                    
+        pc_groundtruth = o3d.io.read_point_cloud(groundtruth_file_path)
+        #Evaluate comprehensive pointcloud
+        completePointSet_pcd = o3d.geometry.PointCloud()
+        print(len(completePointSet_pcd.points))
+        completePointSet_pcd.points =  o3d.utility.Vector3dVector(completePointSet)
+        completePointSet_aligned = align(pc_groundtruth, completePointSet_pcd)
+        # completePointSet_aligned = completePointSet_pcd
+        
+        # Visualize pointcloud ensemble
+        pc_groundtruth.paint_uniform_color([0,0,1])
+        completePointSet_pcd.paint_uniform_color([0.5,0.5,0])
+        print("Compolete point set visual")
+        o3d.visualization.draw_geometries([completePointSet_pcd, pc_groundtruth, ])
+        
+        # Save .ply after it's been aligned with ICP
+        o3d.io.write_point_cloud(os.path.join(path, "completePointSet_aligned_icp.ply"), completePointSet_aligned)
+    if use_colmap:
+        path = reconstruction_folder_path
+        reconstruction_pcd_aligned = apply_transformation(groundtruth_file_path, reconstruction_folder_path, transform_path, show_pointclouds, show_plots) 
+        
+        completePointSet = reconstruction_pcd_aligned
+        pc_groundtruth = o3d.io.read_point_cloud(groundtruth_file_path)
+        completePointSet_aligned = align(pc_groundtruth, completePointSet)
+        o3d.io.write_point_cloud(os.path.join(os.path.dirname(path), "completePointSet_aligned_icp.ply"), completePointSet_aligned)
     distances, chamfer_dist = point_cloud_groundtruth_comparison(pc_groundtruth, completePointSet_aligned, show_pointclouds, show_plots)
     
     max_extent = get_pointcloud_dimension(groundtruth_file_path)
@@ -134,7 +151,7 @@ def main(transform_path: string, output_folder_path: string, groundtruth_path: s
         f.write("Reconstruction file name completePointSet_aligned \n")
         f.write("Groundtruth file path "+groundtruth_file_path+"\n")
         f.write(f"Points in groundtruth file: {len(pc_groundtruth.points)}"+"\n")
-        f.write(f"Points in reconstruction file: {len(completePointSet_pcd.points)}"+"\n")
+        f.write(f"Points in reconstruction file: {len(completePointSet_aligned.points)}"+"\n")
         f.write(f"Chamfer distance: {chamfer_dist}"+"\n")
         f.write(f"Average distance: {avg_distance}\n")
         f.write(f"Median distance:{median_distance}\n")

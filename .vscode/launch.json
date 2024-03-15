@@ -221,5 +221,22 @@
             ],
             "preLaunchTask": "install", 
         },
+        {
+            "name": "3dgs playground delta error",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/3dgs_playground_delta_error.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--parquet_path",
+                "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/best_scene.parquet",
+                "--json_file_path",
+                "data/replica_colmap/room_1_high_quality_500_frames/val.json",
+                "--output_path",
+                "scripts/3dgs_playground_output/",
+            ],
+            "preLaunchTask": "install", 
+        },
     ]
 }

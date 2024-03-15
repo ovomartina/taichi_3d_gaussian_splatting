@@ -8,7 +8,7 @@ from taichi_3d_gaussian_splatting.GaussianPointCloudRasterisation import filter_
     generate_num_overlap_tiles, generate_point_sort_key_by_num_overlap_tiles, find_tile_start_and_end, gaussian_point_rasterisation, load_point_cloud_row_into_gaussian_point_3d
 from taichi_3d_gaussian_splatting.GaussianPointCloudScene import GaussianPointCloudScene
 from taichi_3d_gaussian_splatting.GaussianPoint3D import rotation_matrix_from_quaternion, transform_matrix_from_quaternion_and_translation
-from taichi_3d_gaussian_splatting.utils import grad_point_probability_density_from_conic, inverse_SE3_qt_torch, SE3_to_quaternion_and_translation_torch,\
+from taichi_3d_gaussian_splatting.utils import grad_point_probability_density_from_conic, inverse_SE3_qt_torch, SE3_to_quaternion_and_translation_torch, \
     quaternion_to_rotation_matrix_torch, perturb_pose_quaternion_translation_torch
 from dataclasses import dataclass
 from typing import List, Tuple
@@ -24,6 +24,7 @@ from taichi_3d_gaussian_splatting.GaussianPointTrainer import GaussianPointCloud
 from dataclass_wizard import YAMLWizard
 from typing import List, Tuple, Optional, Callable, Union
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 mat4x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
 mat3x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
@@ -32,6 +33,7 @@ mat2x3f = ti.types.matrix(n=2, m=3, dtype=ti.f32)
 mat2x4f = ti.types.matrix(n=2, m=4, dtype=ti.f32)
 mat3x3f = ti.types.matrix(n=3, m=3, dtype=ti.f32)
 mat3x4f = ti.types.matrix(n=3, m=4, dtype=ti.f32)
+
 
 @ti.kernel
 def gaussian_point_rasterisation_backward_with_pose(
@@ -338,44 +340,56 @@ def gaussian_point_rasterisation_backward_with_pose(
         d_uv_d_translation_camera = project_to_camera_relative_position_jacobian(
             w_t_w_point, T_camera_pointcloud_mat, camera_intrinsics_mat)
         dR_dqx, dR_dqy, dR_dqz, dR_dqw = quaternion_to_rotation_matrix_torch_jacobian(
-            (q_pointcloud_camera[0,0], q_pointcloud_camera[0,1], q_pointcloud_camera[0,2], q_pointcloud_camera[0,3]))
+            (q_pointcloud_camera[0, 0], q_pointcloud_camera[0, 1], q_pointcloud_camera[0, 2], q_pointcloud_camera[0, 3]))
         # x, y, z: coordinate of points in camera frame
         dx_dq = mat1x4f([[dR_dqx[0, 0]*w_t_w_point[0] + dR_dqx[1, 0]*w_t_w_point[1] + dR_dqx[2, 0]*w_t_w_point[2]],
-                              [dR_dqy[0, 0]*w_t_w_point[0] + dR_dqy[1, 0] *
-                                  w_t_w_point[1] + dR_dqy[2, 0]*w_t_w_point[2]],
-                              [dR_dqz[0, 0]*w_t_w_point[0] + dR_dqz[1, 0] *
-                                  w_t_w_point[1] + dR_dqz[2, 0]*w_t_w_point[2]],
-                              [dR_dqw[0, 0]*w_t_w_point[0] + dR_dqw[1, 0]*w_t_w_point[1] + dR_dqw[2, 0]*w_t_w_point[2]]])
+                         [dR_dqy[0, 0]*w_t_w_point[0] + dR_dqy[1, 0] *
+                          w_t_w_point[1] + dR_dqy[2, 0]*w_t_w_point[2]],
+                         [dR_dqz[0, 0]*w_t_w_point[0] + dR_dqz[1, 0] *
+                          w_t_w_point[1] + dR_dqz[2, 0]*w_t_w_point[2]],
+                         [dR_dqw[0, 0]*w_t_w_point[0] + dR_dqw[1, 0]*w_t_w_point[1] + dR_dqw[2, 0]*w_t_w_point[2]]])
 
         dy_dq = mat1x4f([[dR_dqx[0, 1]*w_t_w_point[0] + dR_dqx[1, 1]*w_t_w_point[1] + dR_dqx[2, 1]*w_t_w_point[2]],
-                              [dR_dqy[0, 1]*w_t_w_point[0] + dR_dqy[1, 1] *
-                                  w_t_w_point[1] + dR_dqy[2, 1]*w_t_w_point[2]],
-                              [dR_dqz[0, 1]*w_t_w_point[0] + dR_dqz[1, 1] *
-                                  w_t_w_point[1] + dR_dqz[2, 1]*w_t_w_point[2]],
-                              [dR_dqw[0, 1]*w_t_w_point[0] + dR_dqw[1, 1]*w_t_w_point[1] + dR_dqw[2, 1]*w_t_w_point[2]]])
+                         [dR_dqy[0, 1]*w_t_w_point[0] + dR_dqy[1, 1] *
+                          w_t_w_point[1] + dR_dqy[2, 1]*w_t_w_point[2]],
+                         [dR_dqz[0, 1]*w_t_w_point[0] + dR_dqz[1, 1] *
+                          w_t_w_point[1] + dR_dqz[2, 1]*w_t_w_point[2]],
+                         [dR_dqw[0, 1]*w_t_w_point[0] + dR_dqw[1, 1]*w_t_w_point[1] + dR_dqw[2, 1]*w_t_w_point[2]]])
 
         dz_dq = mat1x4f([[dR_dqx[0, 2]*w_t_w_point[0] + dR_dqx[1, 2]*w_t_w_point[1] + dR_dqx[2, 2]*w_t_w_point[2]],
-                              [dR_dqy[0, 2]*w_t_w_point[0] + dR_dqy[1, 2] *
-                                  w_t_w_point[1] + dR_dqy[2, 2]*w_t_w_point[2]],
-                              [dR_dqz[0, 2]*w_t_w_point[0] + dR_dqz[1, 2] *
-                                  w_t_w_point[1] + dR_dqz[2, 2]*w_t_w_point[2]],
-                              [dR_dqw[0, 2]*w_t_w_point[0] + dR_dqw[1, 2]*w_t_w_point[1] + dR_dqw[2, 2]*w_t_w_point[2]]])
+                         [dR_dqy[0, 2]*w_t_w_point[0] + dR_dqy[1, 2] *
+                          w_t_w_point[1] + dR_dqy[2, 2]*w_t_w_point[2]],
+                         [dR_dqz[0, 2]*w_t_w_point[0] + dR_dqz[1, 2] *
+                          w_t_w_point[1] + dR_dqz[2, 2]*w_t_w_point[2]],
+                         [dR_dqw[0, 2]*w_t_w_point[0] + dR_dqw[1, 2]*w_t_w_point[1] + dR_dqw[2, 2]*w_t_w_point[2]]])
 
-        d_translation_camera_d_q = mat3x4f([[dx_dq[0,0], dx_dq[0,1], dx_dq[0,2], dx_dq[0,3]],
-                                            [dy_dq[0,0], dy_dq[0,1], dy_dq[0,2], dy_dq[0,3]],
-                                            [dz_dq[0,0], dz_dq[0,1], dz_dq[0,2], dz_dq[0,3]]])
+        d_translation_camera_d_q = mat3x4f([[dx_dq[0, 0], dx_dq[0, 1], dx_dq[0, 2], dx_dq[0, 3]],
+                                            [dy_dq[0, 0], dy_dq[0, 1],
+                                                dy_dq[0, 2], dy_dq[0, 3]],
+                                            [dz_dq[0, 0], dz_dq[0, 1], dz_dq[0, 2], dz_dq[0, 3]]])
 
         dxyz_d_t_world_camera = -R_guess.transpose()
-        point_grad_q = d_uv_d_translation_camera @ d_translation_camera_d_q
-        point_grad_t = d_uv_d_translation_camera @ dxyz_d_t_world_camera
+        point_grad_q = d_uv_d_translation_camera @ d_translation_camera_d_q  # d_uv_d_q
+        point_grad_t = d_uv_d_translation_camera @ dxyz_d_t_world_camera  # d_uv_d_t
 
+        # Backpropagation on color loss
         multiply = point_grad_uv @ point_grad_q
+        multiply_t = point_grad_uv @ point_grad_t
+
+        # # Backpropagation on depth loss
+        # # point_depth_grad: d_depth_d_x_camera
+        # d_depth_d_translation = gaussian_point_3d.depth_jacobian(
+        #         T_camera_world=T_camera_pointcloud_mat,
+        #     )
+        
+        # multiply = point_grad_depth * d_depth_d_translation @ d_translation_camera_d_q
+        # multiply_t = point_grad_depth * d_depth_d_translation @ dxyz_d_t_world_camera
+
         grad_q[0] = grad_q[0] + multiply[0]
         grad_q[1] = grad_q[1] + multiply[1]
         grad_q[2] = grad_q[2] + multiply[2]
         grad_q[3] = grad_q[3] + multiply[3]
-        
-        multiply_t = point_grad_uv @ point_grad_t
+
         grad_t[0] = grad_t[0] + multiply_t[0]
         grad_t[1] = grad_t[1] + multiply_t[1]
         grad_t[2] = grad_t[2] + multiply_t[2]
@@ -429,6 +443,7 @@ def torchImage2tiImage(field: ti.template(), data: ti.types.ndarray()):
         field[col, data.shape[0] - row -
               1] = ti.math.vec3(data[row, col, 0], data[row, col, 1], data[row, col, 2])
 
+
 @ti.func
 def quaternion_to_rotation_matrix_torch_jacobian(q):
     qx, qy, qz, qw = q
@@ -454,6 +469,7 @@ def quaternion_to_rotation_matrix_torch_jacobian(q):
     ])
     return dR_dqx, dR_dqy, dR_dqz, dR_dqw
 
+
 @ti.func
 def project_to_camera_relative_position_jacobian(
     w_t_w_points,
@@ -462,12 +478,13 @@ def project_to_camera_relative_position_jacobian(
 ):
 
     w_t_w_pointst_homogeneous = ti.math.vec4(
-            [w_t_w_points[0], w_t_w_points[1], w_t_w_points[2], 1])
+        [w_t_w_points[0], w_t_w_points[1], w_t_w_points[2], 1])
     t = T_camera_world @ w_t_w_pointst_homogeneous
     K = projective_transform
 
     d_uv_d_translation_camera = mat2x3f([
-        [K[0, 0] / t[2], K[0, 1] / t[2], (-K[0, 0] * t[0] - K[0, 1] * t[1]) / (t[2] * t[2])],
+        [K[0, 0] / t[2], K[0, 1] / t[2],
+            (-K[0, 0] * t[0] - K[0, 1] * t[1]) / (t[2] * t[2])],
         [K[1, 0] / t[2], K[1, 1] / t[2], (-K[1, 0] * t[0] - K[1, 1] * t[1]) / (t[2] * t[2])]])
 
     return d_uv_d_translation_camera
@@ -485,7 +502,7 @@ class PoseModel(torch.nn.Module):
         grad_s_factor = 0.5
         grad_q_factor = 1.
         grad_alpha_factor = 20.
-        enable_depth_grad = True
+        enable_depth_grad:bool = True
 
     @dataclass
     class PoseModelInput:
@@ -541,8 +558,9 @@ class PoseModel(torch.nn.Module):
                         color_max_sh_band,
                         ):
 
-                q_pointcloud_camera = F.normalize(q_pointcloud_camera, p=2, dim=-1)
-                
+                q_pointcloud_camera = F.normalize(
+                    q_pointcloud_camera, p=2, dim=-1)
+
                 point_in_camera_mask = torch.zeros(
                     size=(pointcloud.shape[0],), dtype=torch.int8, device=pointcloud.device)
                 point_id = torch.arange(
@@ -790,13 +808,12 @@ class PoseModel(torch.nn.Module):
                     grad_t = torch.zeros(
                         size=(3,), dtype=torch.float32, device=pointcloud.device)
 
-    
                     grad_q = torch.squeeze(grad_q)
-                    
-                    grad_q_taichi = ti.math.vec4([0.,0.,0.,0.])
-                    #grad_q_taichi.from_torch(grad_q.clone().detach())
+
+                    grad_q_taichi = ti.math.vec4([0., 0., 0., 0.])
+                    # grad_q_taichi.from_torch(grad_q.clone().detach())
                     grad_t = torch.squeeze(grad_t)
-                    grad_t_taichi = ti.math.vec3([0.,0.,0.])                 
+                    grad_t_taichi = ti.math.vec3([0., 0., 0.])
                     gaussian_point_rasterisation_backward_with_pose(
                         camera_height=camera_info.camera_height,
                         camera_width=camera_info.camera_width,
@@ -897,8 +914,11 @@ class PoseModel(torch.nn.Module):
 
                 grad_q_pointcloud_camera = grad_q.view(1, -1)
                 grad_t_pointcloud_camera = grad_t.view(1, -1)
+                print(grad_q_pointcloud_camera)
+                print(grad_t_pointcloud_camera)
+                print(grad_rasterized_depth)
                 # same as inputs of forward method
-                               
+
                 return grad_pointcloud, \
                     grad_pointcloud_features, \
                     None, \
@@ -967,7 +987,7 @@ class PoseEstimator():
             [0.0, 0.0, 0.0, 1.0]])
         image_path_list: List[str] = None
         json_file_path: str = None
-        
+
     @dataclass
     class ExtraSceneInfo:
         start_offset: int
@@ -1010,7 +1030,8 @@ class PoseEstimator():
             config=PoseModel.PoseModelConfig(
                 near_plane=0.001,
                 far_plane=1000.,
-                depth_to_sort_key_scale=100.))
+                depth_to_sort_key_scale=100.,
+                enable_depth_grad=True))
 
     def _merge_scenes(self, scene_list):
         # the config does not matter here, only for training
@@ -1044,6 +1065,7 @@ class PoseEstimator():
             ))
         return merged_scene
 
+
     def start(self):
         d = self.config.image_path_list
         count = 0
@@ -1059,11 +1081,11 @@ class PoseEstimator():
                     ground_truth_image_numpy)
 
                 ground_truth_image, resized_camera_info, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
-                                                                                                                        None,
-                                                                                                                        self.camera_info,
-                                                                                                                        1)
+                                                                                                                         None,
+                                                                                                                         self.camera_info,
+                                                                                                                         1)
                 ground_truth_image = ground_truth_image.cuda()
-                
+
                 self.camera_info = resized_camera_info
                 groundtruth_T_pointcloud_camera = torch.tensor(
                     view["T_pointcloud_camera"],
@@ -1073,42 +1095,62 @@ class PoseEstimator():
                     0)
                 groundtruth_q_pointcloud_camera, groundtruth_t_pointcloud_camera = SE3_to_quaternion_and_translation_torch(
                     groundtruth_T_pointcloud_camera)
-                print(f"Ground truth q: \n\t {groundtruth_q_pointcloud_camera}")
-                print(f"Ground truth t: \n\t {groundtruth_t_pointcloud_camera}")
-                initial_guess_q_pointcloud_camera, initial_guess_t_pointcloud_camera = perturb_pose_quaternion_translation_torch(groundtruth_q_pointcloud_camera,\
-                    groundtruth_t_pointcloud_camera,\
-                        0.05, 0.3)
-                initial_guess_q_pointcloud_camera = torch.tensor([ [0.6749, 0.5794,  -0.3524, -0.2909]], device="cuda")
-                initial_guess_t_pointcloud_camera = torch.tensor([ [0.2528, 0.1397,  -0.0454]], device="cuda")
+                print(
+                    f"Ground truth q: \n\t {groundtruth_q_pointcloud_camera}")
+                print(
+                    f"Ground truth t: \n\t {groundtruth_t_pointcloud_camera}")
+                initial_guess_q_pointcloud_camera, initial_guess_t_pointcloud_camera = perturb_pose_quaternion_translation_torch(groundtruth_q_pointcloud_camera,
+                                                                                                                                 groundtruth_t_pointcloud_camera,
+                                                                                                                                 0.05, 0.3)
+                initial_guess_q_pointcloud_camera = torch.tensor(
+                    [[0.6749, 0.5794,  -0.3524, -0.2909]], device="cuda")
+                initial_guess_t_pointcloud_camera = torch.tensor(
+                    [[0.2528, 0.1397,  -0.0454]], device="cuda")
                 initial_guess_q_pointcloud_camera.requires_grad = True
                 initial_guess_t_pointcloud_camera.requires_grad = True
-                print(f"Ground truth transformation world to camera, in camera frame: \n\t {groundtruth_T_pointcloud_camera}")
-                print(f"Initial guess q: \n\t {initial_guess_q_pointcloud_camera}")
-                print(f"Initial guess t: \n\t {initial_guess_t_pointcloud_camera}")
-                
+                print(
+                    f"Ground truth transformation world to camera, in camera frame: \n\t {groundtruth_T_pointcloud_camera}")
+                print(
+                    f"Initial guess q: \n\t {initial_guess_q_pointcloud_camera}")
+                print(
+                    f"Initial guess t: \n\t {initial_guess_t_pointcloud_camera}")
+
                 # Save groundtruth image
-                im = PIL.Image.fromarray((ground_truth_image_numpy).astype(np.uint8))
-                if not os.path.exists(os.path.join(self.output_path,f'groundtruth/')):
-                    os.makedirs(os.path.join(self.output_path,'groundtruth/'))
-                im.save(os.path.join(self.output_path,f'groundtruth/groundtruth_{count}.png'))
-                
+                im = PIL.Image.fromarray(
+                    (ground_truth_image_numpy).astype(np.uint8))
+                if not os.path.exists(os.path.join(self.output_path, f'groundtruth/')):
+                    os.makedirs(os.path.join(self.output_path, 'groundtruth/'))
+                im.save(os.path.join(self.output_path,
+                        f'groundtruth/groundtruth_{count}.png'))
+
                 # Optimization starts
                 optimizer_q = torch.optim.Adam(
-                   [initial_guess_q_pointcloud_camera], lr=0.001)
+                    [initial_guess_q_pointcloud_camera], lr=0.001)
                 optimizer_t = torch.optim.Adam(
                     [initial_guess_t_pointcloud_camera], lr=0.001)
-                
-                num_epochs = 20000
-                for epoch in range(num_epochs):          
+
+                num_epochs = 3000
+                errors_t = []
+                errors_q = []
+                for epoch in range(num_epochs):
+                    
+                    # Add error to plot
+                    initial_guess_t_pointcloud_camera_numpy = initial_guess_t_pointcloud_camera.clone().detach().cpu().numpy()
+                    initial_guess_q_pointcloud_camera_numpy = initial_guess_q_pointcloud_camera.clone().detach().cpu().numpy()
+                    initial_guess_q_pointcloud_camera_numpy = initial_guess_q_pointcloud_camera_numpy / np.sqrt(np.sum(initial_guess_q_pointcloud_camera_numpy**2))
+                    errors_t.append(np.linalg.norm(initial_guess_t_pointcloud_camera_numpy - groundtruth_t_pointcloud_camera.cpu().numpy()))
+                    errors_q.append(np.linalg.norm(initial_guess_q_pointcloud_camera_numpy - groundtruth_q_pointcloud_camera.cpu().numpy()))
+                    
+                    # Set the gradient to zero
                     optimizer_q.zero_grad()
                     optimizer_t.zero_grad()
-                    
+
                     predicted_image, _, _, _ = self.rasteriser(
                         PoseModel.PoseModelInput(
                             point_cloud=self.scene.point_cloud,
                             point_cloud_features=self.scene.point_cloud_features,
                             point_invalid_mask=self.scene.point_invalid_mask,
-                            point_object_id=self.scene.point_object_id,                    
+                            point_object_id=self.scene.point_object_id,
                             q_pointcloud_camera=initial_guess_q_pointcloud_camera,
                             t_pointcloud_camera=initial_guess_t_pointcloud_camera,
                             camera_info=self.camera_info,
@@ -1119,7 +1161,7 @@ class PoseEstimator():
                     L1 = torch.abs(predicted_image - ground_truth_image).mean()
                     L1.backward()
 
-                    if not torch.isnan(initial_guess_t_pointcloud_camera.grad).any():                      
+                    if not torch.isnan(initial_guess_t_pointcloud_camera.grad).any():
                         torch.nn.utils.clip_grad_norm_(
                             initial_guess_t_pointcloud_camera, max_norm=1.0)
                         optimizer_t.step()
@@ -1127,56 +1169,61 @@ class PoseEstimator():
                         print("Skipped epoch ", epoch)
                         print(previous_initial_guess_t_pointcloud_camera)
                         print(previous_initial_guess_t_pointcloud_camera)
-                        # image_np = predicted_image.cpu().detach().numpy()
-                        # im = PIL.Image.fromarray(
-                        #     (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
-                        # if not os.path.exists(os.path.join(self.output_path, f'epochs/')):
-                        #     os.makedirs(os.path.join(self.output_path, 'epochs/'))
-                        # im.save(os.path.join(self.output_path,
-                        #         f'epochs/epoch_{epoch}_problematic.png'))
-                    
+
                     if not torch.isnan(initial_guess_q_pointcloud_camera.grad).any():
                         torch.nn.utils.clip_grad_norm_(
                             initial_guess_q_pointcloud_camera, max_norm=1.0)
                         optimizer_q.step()
-                        
-                        
+
                     if (epoch + 1) % 50 == 0 and epoch > 100:
                         with torch.no_grad():
-                            print(f"============== epoch {epoch + 1} ==========================")
+                            print(
+                                f"============== epoch {epoch + 1} ==========================")
                             print(f"loss:{L1}")
-                            q_pointcloud_camera = F.normalize(initial_guess_q_pointcloud_camera, p=2, dim=-1)
+                            q_pointcloud_camera = F.normalize(
+                                initial_guess_q_pointcloud_camera, p=2, dim=-1)
                             R = quaternion_to_rotation_matrix_torch(
                                 q_pointcloud_camera)
                             print("Estimated rotation")
                             print(R)
-                            print(f"Estimated translation: \n\t {initial_guess_t_pointcloud_camera}")
-                            print(f"Gradient translation: \n\t {initial_guess_t_pointcloud_camera.grad}")
-                            print("Ground truth transformation world to camera, in camera frame:")
+                            print(
+                                f"Estimated translation: \n\t {initial_guess_t_pointcloud_camera}")
+                            print(
+                                f"Gradient translation: \n\t {initial_guess_t_pointcloud_camera.grad}")
+                            print(
+                                "Ground truth transformation world to camera, in camera frame:")
                             print(groundtruth_T_pointcloud_camera)
                             image_np = predicted_image.cpu().detach().numpy()
                             im = PIL.Image.fromarray(
                                 (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
                             if not os.path.exists(os.path.join(self.output_path, f'epochs/')):
-                                os.makedirs(os.path.join(self.output_path, 'epochs/'))
+                                os.makedirs(os.path.join(
+                                    self.output_path, 'epochs/'))
                             im.save(os.path.join(self.output_path,
                                     f'epochs/epoch_{epoch}.png'))
-                            np.savetxt(os.path.join(self.output_path, f'epochs/epoch_{epoch}_q.txt'), q_pointcloud_camera.cpu().detach().numpy())
-                            np.savetxt(os.path.join(self.output_path, f'epochs/epoch_{epoch}_t.txt'), initial_guess_t_pointcloud_camera.cpu().detach().numpy())
+                            np.savetxt(os.path.join(
+                                self.output_path, f'epochs/epoch_{epoch}_q.txt'), q_pointcloud_camera.cpu().detach().numpy())
+                            np.savetxt(os.path.join(
+                                self.output_path, f'epochs/epoch_{epoch}_t.txt'), initial_guess_t_pointcloud_camera.cpu().detach().numpy())
                     previous_initial_guess_t_pointcloud_camera = initial_guess_t_pointcloud_camera.clone().detach()
                     previous_grad_t_pointcloud_camera = initial_guess_t_pointcloud_camera.grad
-                break # Only optimize on the first image
+                plt.plot(errors_q)
+                plt.plot(errors_t)
+                plt.xlabel("File Index")
+                plt.ylabel("Error")
+                plt.title("Rotational and translational error")
+                plt.savefig("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/epochs/rot_trasl_error.png")
+                break  # Only optimize on the first image
                 count += 1
+
 
 parser = argparse.ArgumentParser(description='Parquet file path')
 parser.add_argument('--parquet_path', type=str, help='Parquet file path')
 # parser.add_argument('--images-path', type=str, help='Images file path')
-parser.add_argument('--json_file_path', type=str, help='Json trajectory file path')
+parser.add_argument('--json_file_path', type=str,
+                    help='Json trajectory file path')
 parser.add_argument('--output_path', type=str, help='Output folder path')
 
-# # Let's keep things easy with just 1 picture for now
-# image_path = [
-#     "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000000.jpg"]
 args = parser.parse_args()
 
 print("Opening parquet file ", args.parquet_path)

@@ -359,7 +359,13 @@ if os.path.splitext(args.parquet_path)[-1] == '.ply':
 print("Opening parquet file ", args.parquet_path)
 parquet_path_list=[args.parquet_path]
 ti.init(arch=ti.cuda, device_memory_GB=4, kernel_profiler=True)
-visualizer = GaussianPointVisualizer(args.trajectory_path, args.output_path, config=GaussianPointVisualizer.GaussianPointVisualizerConfig(
+
+# Create output directory
+output_path = os.path.join( args.output_path, os.path.basename(os.path.dirname(args.parquet_path)))
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+    
+visualizer = GaussianPointVisualizer(args.trajectory_path, output_path, config=GaussianPointVisualizer.GaussianPointVisualizerConfig(
     parquet_path_list=parquet_path_list,
 ))
 visualizer.start()
