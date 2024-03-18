@@ -2,22 +2,31 @@ import argparse
 import json
 import taichi as ti
 from taichi_3d_gaussian_splatting.Camera import CameraInfo
-from taichi_3d_gaussian_splatting.GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterization
+from taichi_3d_gaussian_splatting.GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterisation
 from taichi_3d_gaussian_splatting.GaussianPointCloudScene import GaussianPointCloudScene
 from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation_torch, \
     quaternion_to_rotation_matrix_torch, perturb_pose_quaternion_translation_torch
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 import torch
 import numpy as np
-import torch.nn.functional as F
 # %%
 import os
 import PIL.Image
 import torchvision
 from taichi_3d_gaussian_splatting.GaussianPointTrainer import GaussianPointCloudTrainer
 import matplotlib.pyplot as plt
-import symforce.symbolic as sf
+
+import sym
+
+
+def extract_q_t_from_pose(pose3: sym.Pose3) -> Tuple[torch.Tensor, torch.Tensor]:
+    q = torch.tensor(
+        [pose3.rotation().data[:]]).to(torch.float32)
+    t = torch.tensor(
+        [pose3.position()]).to(torch.float32)
+    return q, t
+
 
 class PoseEstimator():
     @dataclass
@@ -75,12 +84,6 @@ class PoseEstimator():
         self.image_buffer = ti.Vector.field(3, dtype=ti.f32, shape=(
             self.config.image_width, self.config.image_height))
 
-        self.rasteriser = GaussianPointCloudPoseRasterization(
-            config=GaussianPointCloudPoseRasterization.GaussianPointCloudPoseRasterizationConfig(
-                near_plane=0.001,
-                far_plane=1000.,
-                depth_to_sort_key_scale=100.,
-                enable_depth_grad=True))
 
     def _merge_scenes(self, scene_list):
         # the config does not matter here, only for training
@@ -113,7 +116,6 @@ class PoseEstimator():
                 max_num_points_ratio=None
             ))
         return merged_scene
-
 
     def start(self):
         d = self.config.image_path_list
@@ -148,21 +150,10 @@ class PoseEstimator():
                     f"Ground truth q: \n\t {groundtruth_q_pointcloud_camera}")
                 print(
                     f"Ground truth t: \n\t {groundtruth_t_pointcloud_camera}")
-                initial_guess_q_pointcloud_camera, initial_guess_t_pointcloud_camera = perturb_pose_quaternion_translation_torch(groundtruth_q_pointcloud_camera,
-                                                                                                                                 groundtruth_t_pointcloud_camera,
-                                                                                                                                 0.05, 0.3)
-                initial_guess_q_pointcloud_camera = torch.tensor(
-                    [[0.6749, 0.5794,  -0.3524, -0.2909]], device="cuda")
-                initial_guess_t_pointcloud_camera = torch.tensor(
-                    [[0.2528, 0.1397,  -0.0454]], device="cuda")
-                initial_guess_q_pointcloud_camera.requires_grad = True
-                initial_guess_t_pointcloud_camera.requires_grad = True
                 print(
                     f"Ground truth transformation world to camera, in camera frame: \n\t {groundtruth_T_pointcloud_camera}")
-                print(
-                    f"Initial guess q: \n\t {initial_guess_q_pointcloud_camera}")
-                print(
-                    f"Initial guess t: \n\t {initial_guess_t_pointcloud_camera}")
+                groundtruth_q_pointcloud_camera_numpy = groundtruth_q_pointcloud_camera.cpu().numpy()
+                groundtruth_t_pointcloud_camera_numpy = groundtruth_t_pointcloud_camera.cpu().numpy()
 
                 # Save groundtruth image
                 im = PIL.Image.fromarray(
@@ -172,36 +163,71 @@ class PoseEstimator():
                 im.save(os.path.join(self.output_path,
                         f'groundtruth/groundtruth_{count}.png'))
 
-                # Optimization starts
-                optimizer_q = torch.optim.Adam(
-                    [initial_guess_q_pointcloud_camera], lr=0.001)
-                optimizer_t = torch.optim.Adam(
-                    [initial_guess_t_pointcloud_camera], lr=0.001)
-
                 num_epochs = 3000
                 errors_t = []
                 errors_q = []
+
+                rotation_groundtruth = sym.Rot3(
+                    groundtruth_q_pointcloud_camera_numpy[0, :])
+                pose_groundtruth = sym.Pose3(
+                    R=rotation_groundtruth, t=groundtruth_t_pointcloud_camera_numpy.T.astype("float"))
+
+                print(f"Pose groundtruth:\n\t{pose_groundtruth}")
+                
+                # std = 0.1, First 3 elements: rotation last 3 elements: translation
+                delta_numpy_array_q = np.random.normal(0, 0.15, (3, 1))
+                delta_numpy_array_t = np.random.normal(0, 0.2, (3, 1))
+                delta_numpy_array = np.vstack((delta_numpy_array_q, delta_numpy_array_t))
+                delta_tensor = torch.zeros(
+                    (6, 1), requires_grad=True, device="cuda")
+
+                epsilon = 0.0001
+                initial_pose = sym.Pose3.retract(
+                    pose_groundtruth, delta_numpy_array, epsilon)
+
+                print(f"Initial pose:\n\t{initial_pose}")
+                initial_pose_q = torch.tensor(
+                    [initial_pose.rotation().data[:]]).to(torch.float32)
+                initial_pose_t = torch.tensor(
+                    [initial_pose.position()]).to(torch.float32)
+
+                self.rasteriser = GaussianPointCloudPoseRasterisation(
+                    config=GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationConfig(
+                        near_plane=0.001,
+                        far_plane=1000.,
+                        depth_to_sort_key_scale=100.,
+                        enable_depth_grad=True,
+                        initial_pose=initial_pose))
+
+                # Optimization starts
+                optimizer_delta = torch.optim.Adam(
+                    [delta_tensor], lr=0.001)
                 for epoch in range(num_epochs):
-                    
+
                     # Add error to plot
-                    initial_guess_t_pointcloud_camera_numpy = initial_guess_t_pointcloud_camera.clone().detach().cpu().numpy()
-                    initial_guess_q_pointcloud_camera_numpy = initial_guess_q_pointcloud_camera.clone().detach().cpu().numpy()
-                    initial_guess_q_pointcloud_camera_numpy = initial_guess_q_pointcloud_camera_numpy / np.sqrt(np.sum(initial_guess_q_pointcloud_camera_numpy**2))
-                    errors_t.append(np.linalg.norm(initial_guess_t_pointcloud_camera_numpy - groundtruth_t_pointcloud_camera.cpu().numpy()))
-                    errors_q.append(np.linalg.norm(initial_guess_q_pointcloud_camera_numpy - groundtruth_q_pointcloud_camera.cpu().numpy()))
-                    
+                    with torch.no_grad():
+                        epsilon = 0.0001
+                        delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
+                        current_pose = initial_pose.retract(
+                            delta_numpy_array, epsilon=epsilon)
+                        current_q, current_t = extract_q_t_from_pose(
+                            current_pose)
+                        current_q_numpy_array = current_q.clone().detach().cpu().numpy()
+                        current_t_numpy_array = current_t.clone().detach().cpu().numpy()
+                        errors_t.append(np.linalg.norm(current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy()))
+                        errors_q.append(np.linalg.norm(current_q_numpy_array - groundtruth_q_pointcloud_camera.cpu().numpy()))
+                        
+
                     # Set the gradient to zero
-                    optimizer_q.zero_grad()
-                    optimizer_t.zero_grad()
+                    optimizer_delta.zero_grad()
 
                     predicted_image, _, _, _ = self.rasteriser(
-                        GaussianPointCloudPoseRasterization.GaussianPointCloudPoseRasterizationInput(
+                        GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
                             point_cloud=self.scene.point_cloud,
                             point_cloud_features=self.scene.point_cloud_features,
                             point_invalid_mask=self.scene.point_invalid_mask,
                             point_object_id=self.scene.point_object_id,
-                            q_pointcloud_camera=initial_guess_q_pointcloud_camera,
-                            t_pointcloud_camera=initial_guess_t_pointcloud_camera,
+                            delta=delta_tensor,
                             camera_info=self.camera_info,
                             color_max_sh_band=3,
                         )
@@ -210,58 +236,47 @@ class PoseEstimator():
                     L1 = torch.abs(predicted_image - ground_truth_image).mean()
                     L1.backward()
 
-                    if not torch.isnan(initial_guess_t_pointcloud_camera.grad).any():
+                    if not torch.isnan(delta_tensor.grad).any():
                         torch.nn.utils.clip_grad_norm_(
-                            initial_guess_t_pointcloud_camera, max_norm=1.0)
-                        optimizer_t.step()
-                    else:
-                        print("Skipped epoch ", epoch)
-                        print(previous_initial_guess_t_pointcloud_camera)
-                        print(previous_initial_guess_t_pointcloud_camera)
+                            delta_tensor, max_norm=1.0)
+                        optimizer_delta.step()
 
-                    if not torch.isnan(initial_guess_q_pointcloud_camera.grad).any():
-                        torch.nn.utils.clip_grad_norm_(
-                            initial_guess_q_pointcloud_camera, max_norm=1.0)
-                        optimizer_q.step()
-
-                    if (epoch + 1) % 50 == 0 and epoch > 100:
+                    if epoch % 50 == 0:
                         with torch.no_grad():
                             print(
-                                f"============== epoch {epoch + 1} ==========================")
+                                f"============== epoch {epoch} ==========================")
                             print(f"loss:{L1}")
-                            q_pointcloud_camera = F.normalize(
-                                initial_guess_q_pointcloud_camera, p=2, dim=-1)
-                            R = quaternion_to_rotation_matrix_torch(
-                                q_pointcloud_camera)
-                            print("Estimated rotation")
-                            print(R)
-                            print(
-                                f"Estimated translation: \n\t {initial_guess_t_pointcloud_camera}")
-                            print(
-                                f"Gradient translation: \n\t {initial_guess_t_pointcloud_camera.grad}")
-                            print(
-                                "Ground truth transformation world to camera, in camera frame:")
-                            print(groundtruth_T_pointcloud_camera)
+
                             image_np = predicted_image.cpu().detach().numpy()
+
+                            epsilon = 0.0001
+                            delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
+                            current_pose = initial_pose.retract(
+                                delta_numpy_array, epsilon=epsilon)
+                            current_q, current_t = extract_q_t_from_pose(
+                                current_pose)
+                            print(f"Initial pose:\n\t{initial_pose}")
+                            print(f"Current pose:\n\t{current_pose}")
+                            print(f"Ground truth pose:\n\t{pose_groundtruth}")
+
                             im = PIL.Image.fromarray(
                                 (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
-                            if not os.path.exists(os.path.join(self.output_path, f'epochs/')):
+                            if not os.path.exists(os.path.join(self.output_path, f'epochs_delta/')):
                                 os.makedirs(os.path.join(
-                                    self.output_path, 'epochs/'))
+                                    self.output_path, 'epochs_delta/'))
                             im.save(os.path.join(self.output_path,
-                                    f'epochs/epoch_{epoch}.png'))
+                                    f'epochs_delta/epoch_{epoch}.png'))
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs/epoch_{epoch}_q.txt'), q_pointcloud_camera.cpu().detach().numpy())
+                                self.output_path, f'epochs_delta/epoch_{epoch}_q.txt'), current_q.cpu().detach().numpy())
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs/epoch_{epoch}_t.txt'), initial_guess_t_pointcloud_camera.cpu().detach().numpy())
-                    previous_initial_guess_t_pointcloud_camera = initial_guess_t_pointcloud_camera.clone().detach()
-                    previous_grad_t_pointcloud_camera = initial_guess_t_pointcloud_camera.grad
+                                self.output_path, f'epochs_delta/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
                 plt.plot(errors_q)
                 plt.plot(errors_t)
                 plt.xlabel("File Index")
                 plt.ylabel("Error")
                 plt.title("Rotational and translational error")
-                plt.savefig("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/epochs/rot_trasl_error.png")
+                plt.savefig(
+                    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/epochs/rot_trasl_error.png")
                 break  # Only optimize on the first image
 
 

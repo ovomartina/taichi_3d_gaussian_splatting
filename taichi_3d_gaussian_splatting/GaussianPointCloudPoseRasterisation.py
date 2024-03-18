@@ -10,6 +10,9 @@ from .GaussianPointCloudRasterisation import filter_point_in_camera, generate_po
 from typing import Optional, Callable
 from dataclass_wizard import YAMLWizard
 import torch.nn.functional as F
+import sym
+import symforce
+import symforce.symbolic as sf
 
 mat4x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
 mat3x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
@@ -366,7 +369,7 @@ def gaussian_point_rasterisation_backward_with_pose(
         # d_depth_d_translation = gaussian_point_3d.depth_jacobian(
         #         T_camera_world=T_camera_pointcloud_mat,
         #     )
-        
+
         # multiply = point_grad_depth * d_depth_d_translation @ d_translation_camera_d_q
         # multiply_t = point_grad_depth * d_depth_d_translation @ dxyz_d_t_world_camera
 
@@ -487,7 +490,8 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
         grad_s_factor = 0.5
         grad_q_factor = 1.
         grad_alpha_factor = 20.
-        enable_depth_grad:bool = True
+        enable_depth_grad: bool = True
+        initial_pose: sym.Pose3 = None
 
     @dataclass
     class GaussianPointCloudPoseRasterisationInput:
@@ -501,10 +505,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
         point_object_id: torch.Tensor
         point_invalid_mask: torch.Tensor  # N
         camera_info: CameraInfo
-        # Kx4, x to the right, y down, z forward, K is the number of objects
-        q_pointcloud_camera: torch.Tensor
-        # Kx3, x to the right, y down, z forward, K is the number of objects
-        t_pointcloud_camera: torch.Tensor
+        delta: torch.Tensor  # 6x1
         color_max_sh_band: int = 2
 
     @dataclass
@@ -530,22 +531,26 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
         self.config = config
 
         class _module_function(torch.autograd.Function):
-
             @staticmethod
             def forward(ctx,
                         pointcloud,
                         pointcloud_features,
                         point_invalid_mask,
                         point_object_id,
-                        q_pointcloud_camera,
-                        t_pointcloud_camera,
+                        delta_pose,
                         camera_info,
                         color_max_sh_band,
                         ):
-
-                q_pointcloud_camera = F.normalize(
-                    q_pointcloud_camera, p=2, dim=-1)
-
+                epsilon = 0.0001
+                delta_numpy_array = delta_pose.clone().detach().cpu().numpy()
+                current_pose = sym.Pose3.retract(
+                    self.config.initial_pose, delta_numpy_array, epsilon)
+                # current_pose = self.config.initial_pose.from_tangent(
+                #     delta_numpy_array, epsilon=epsilon)
+                q_pointcloud_camera = torch.tensor(
+                    [current_pose.rotation().data[:]]).to(torch.float32) # 1x4
+                t_pointcloud_camera = torch.tensor(
+                    [current_pose.position()]).to(torch.float32) # 1x3
                 point_in_camera_mask = torch.zeros(
                     size=(pointcloud.shape[0],), dtype=torch.int8, device=pointcloud.device)
                 point_id = torch.arange(
@@ -721,6 +726,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                     q_camera_pointcloud,
                     t_pointcloud_camera,
                     t_camera_pointcloud,
+                    delta_pose,
                     point_uv,
                     point_in_camera,
                     point_uv_conic,
@@ -735,7 +741,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
             @staticmethod
             def backward(ctx, grad_rasterized_image, grad_rasterized_depth,
                          grad_pixel_valid_point_count, grad_pixel_accumulated_alpha):
-                grad_pointcloud = grad_pointcloud_features = grad_q_pointcloud_camera = grad_t_pointcloud_camera = None
+                grad_pointcloud = grad_pointcloud_features = None
                 if ctx.needs_input_grad[0] or ctx.needs_input_grad[1]:
                     pointcloud, \
                         pointcloud_features, \
@@ -752,6 +758,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                         q_camera_pointcloud, \
                         t_pointcloud_camera, \
                         t_camera_pointcloud, \
+                        delta_pose, \
                         point_uv, \
                         point_in_camera, \
                         point_uv_conic, \
@@ -761,6 +768,20 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                     color_max_sh_band = ctx.color_max_sh_band
                     grad_rasterized_image = grad_rasterized_image.contiguous()
                     enable_depth_grad = self.config.enable_depth_grad
+
+                    # Retrieve current pose as sym
+                    q_pointcloud_camera_numpy_array = q_pointcloud_camera.clone().detach().cpu().numpy()
+                    t_pointcloud_camera_numpy_array = t_pointcloud_camera.clone().detach().cpu().numpy()
+                    R_pointcloud_camera = sym.Rot3(
+                        q_pointcloud_camera_numpy_array)
+                    quaternion = sf.Quaternion(sf.Vector3(float(q_pointcloud_camera_numpy_array[0, 0]), float(q_pointcloud_camera_numpy_array[0, 1]),
+                                                          float(q_pointcloud_camera_numpy_array[0, 2])), float(q_pointcloud_camera_numpy_array[0, 3]))
+                    R_pointcloud_camera = sf.Rot3(quaternion)
+
+                    current_pose = sf.Pose3(
+                        R=R_pointcloud_camera,
+                        t=sf.Vector3(float(t_pointcloud_camera_numpy_array[0, 0]), float(t_pointcloud_camera_numpy_array[0, 1]), float(t_pointcloud_camera_numpy_array[0, 2])))
+
                     if enable_depth_grad:
                         grad_rasterized_depth = grad_rasterized_depth.contiguous()
                         in_camera_grad_depth_buffer = torch.zeros(
@@ -792,13 +813,11 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                         size=(4,), dtype=torch.float32, device=pointcloud.device)
                     grad_t = torch.zeros(
                         size=(3,), dtype=torch.float32, device=pointcloud.device)
-
+                    grad_delta_pose = torch.zeros(
+                        size=(6,), dtype=torch.float32, device=pointcloud.device)
                     grad_q = torch.squeeze(grad_q)
-
-                    grad_q_taichi = ti.math.vec4([0., 0., 0., 0.])
-                    # grad_q_taichi.from_torch(grad_q.clone().detach())
                     grad_t = torch.squeeze(grad_t)
-                    grad_t_taichi = ti.math.vec3([0., 0., 0.])
+                    grad_delta_pose = torch.squeeze(grad_delta_pose)
                     gaussian_point_rasterisation_backward_with_pose(
                         camera_height=camera_info.camera_height,
                         camera_width=camera_info.camera_width,
@@ -897,19 +916,25 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                     _type_: _description_
                 """
 
-                grad_q_pointcloud_camera = grad_q.view(1, -1)
-                grad_t_pointcloud_camera = grad_t.view(1, -1)
-                print(grad_q_pointcloud_camera)
-                print(grad_t_pointcloud_camera)
-                print(grad_rasterized_depth)
+                grad_delta_pose_pointcloud_camera = torch.zeros((6, 1)).cuda()
                 # same as inputs of forward method
+                grad_delta_pose = current_pose.storage_D_tangent()
+                grad_delta_pose_list = grad_delta_pose.to_list()
 
+                # Convert the Python list to a PyTorch tensor
+                grad_delta_pose_torch = torch.tensor(
+                    grad_delta_pose_list, dtype=torch.float32, device="cuda")
+                grad_q = grad_q.view(1, 4)
+                grad_t = grad_t.view(1, 3)
+                grad_delta_pose_pointcloud_camera = torch.hstack(
+                    (grad_q, grad_t)) @ grad_delta_pose_torch
+                grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                    6, 1)
                 return grad_pointcloud, \
                     grad_pointcloud_features, \
                     None, \
                     None, \
-                    grad_q_pointcloud_camera, \
-                    grad_t_pointcloud_camera, \
+                    grad_delta_pose_pointcloud_camera, \
                     None, \
                     None
 
@@ -937,8 +962,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
         pointcloud_features = input_data.point_cloud_features
         point_invalid_mask = input_data.point_invalid_mask
         point_object_id = input_data.point_object_id
-        q_pointcloud_camera = input_data.q_pointcloud_camera
-        t_pointcloud_camera = input_data.t_pointcloud_camera
+        delta = input_data.delta
         color_max_sh_band = input_data.color_max_sh_band
         camera_info = input_data.camera_info
         assert camera_info.camera_width % 16 == 0
@@ -948,8 +972,7 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
             pointcloud_features,
             point_invalid_mask,
             point_object_id,
-            q_pointcloud_camera,
-            t_pointcloud_camera,
+            delta,
             camera_info,
             color_max_sh_band,
         )
