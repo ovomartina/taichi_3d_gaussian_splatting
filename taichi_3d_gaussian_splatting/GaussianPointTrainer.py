@@ -6,7 +6,7 @@ from .GaussianPointCloudRasterisation import GaussianPointCloudRasterisation
 from .GaussianPointAdaptiveController import GaussianPointAdaptiveController
 from .LossFunction import LossFunction
 from .Lidar import Lidar
-from .utils import write_png
+from .utils import rotation_matrix_to_quaternion_torch, quaternion_to_rotation_matrix_torch
 
 import torch
 from dataclass_wizard import YAMLWizard
@@ -22,8 +22,6 @@ import matplotlib.pyplot as plt
 from collections import deque
 from typing import Optional
 import numpy as np
-import open3d as o3d
-from PIL import Image
 
 
 def cycle(dataloader):
@@ -60,6 +58,8 @@ class GaussianPointCloudTrainer:
         adaptive_controller_config: GaussianPointAdaptiveController.GaussianPointAdaptiveControllerConfig = GaussianPointAdaptiveController.GaussianPointAdaptiveControllerConfig()
         gaussian_point_cloud_scene_config: GaussianPointCloudScene.PointCloudSceneConfig = GaussianPointCloudScene.PointCloudSceneConfig()
         loss_function_config: LossFunction.LossFunctionConfig = LossFunction.LossFunctionConfig()
+        noise_std_q: float = 0.0
+        noise_std_t: float = 0.0
 
     def __init__(self, config: TrainConfig):
         self.config = config
@@ -82,10 +82,33 @@ class GaussianPointCloudTrainer:
             noise_std_q=self.config.noise_std_q,
             noise_std_t=self.config.noise_std_t
         )
+        # Original Traslation: -1.59774687, 0.4059509, -0.21347023
         transform = np.array([[-0.07453163,  0.11889557, -0.4673894,  -1.59774687],
-                              [0.48178008,  0.03977281, -0.06670892,  0.4059509],
+                              [0.48178008,  0.03977281, -0.06670892,   0.4059509],
                               [0.02184015, -0.47162058, -0.12345461, -0.21347023],
                               [0.,     0.,        0.,        1.]])
+        
+        #         [[-0.07269247  0.12011554 -0.46715833 -1.61574687]
+        #  [ 0.48165509  0.04348471 -0.06376747  0.4119509 ]
+        #  [ 0.02594256 -0.47077614 -0.12508256 -0.20647023]
+        #  [ 0.          0.          0.          1.        ]]
+        
+        transform[:3, :3] = transform[:3, :3]/0.487
+        print(transform)
+        t_pointcloud_pointcloudstar = np.array([-0.018, 0.006, 0.007]).T
+        R_torch = torch.from_numpy(transform[:3, :3]).view((1, 3, 3))
+        print(R_torch)
+        q = torch.nn.functional.normalize(
+            rotation_matrix_to_quaternion_torch(R_torch))
+        q = torch.nn.functional.normalize(
+            q + torch.tensor([0., 0.0025, 0.004, -0.0025]).T).detach().cpu().numpy()
+        transform[:3, :3] = 0.4878*quaternion_to_rotation_matrix_torch(
+            torch.from_numpy(q)).detach().cpu().numpy()
+        transform[:3, 3] = transform[:3, 3] + \
+            t_pointcloud_pointcloudstar  # 0.4878: scale factor
+
+        print(transform)
+
         self.scene = GaussianPointCloudScene.from_parquet(
             self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
         self.scene = self.scene.cuda()
@@ -164,7 +187,7 @@ class GaussianPointCloudTrainer:
             optimizer.zero_grad()
             position_optimizer.zero_grad()
 
-            image_gt, q_pointcloud_camera, t_pointcloud_camera, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera = next(
+            image_gt, _, _, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera, t_pointcloud_camera = next(
                 train_data_loader_iter)
 
             if downsample_factor > 1:
@@ -437,7 +460,7 @@ class GaussianPointCloudTrainer:
             for idx, val_data in enumerate(tqdm(val_data_loader)):
                 start_event = torch.cuda.Event(enable_timing=True)
                 end_event = torch.cuda.Event(enable_timing=True)
-                image_gt, q_pointcloud_camera, t_pointcloud_camera, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera = val_data
+                image_gt, _, _, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera, _, q_pointcloud_camera, t_pointcloud_camera = val_data
                 image_gt = image_gt.cuda()
                 depth_gt = depth_gt.cuda()
                 q_pointcloud_camera = q_pointcloud_camera.cuda()

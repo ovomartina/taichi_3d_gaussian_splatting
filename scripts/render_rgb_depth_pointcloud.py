@@ -2,6 +2,7 @@ import argparse
 import taichi as ti
 from taichi_3d_gaussian_splatting.Camera import CameraInfo
 from taichi_3d_gaussian_splatting.GaussianPointCloudRasterisation import GaussianPointCloudRasterisation
+from taichi_3d_gaussian_splatting.GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterisation
 from taichi_3d_gaussian_splatting.GaussianPointCloudScene import GaussianPointCloudScene
 from taichi_3d_gaussian_splatting.utils import torch2ti, SE3_to_quaternion_and_translation_torch, quaternion_rotate_torch, quaternion_multiply_torch, quaternion_conjugate_torch
 from dataclasses import dataclass
@@ -223,8 +224,14 @@ class GaussianPointVisualizer:
             camera_height=self.config.image_height,
             camera_id=0,
         )
-        self.rasteriser = GaussianPointCloudRasterisation(
-            config=GaussianPointCloudRasterisation.GaussianPointCloudRasterisationConfig(
+        # self.rasteriser = GaussianPointCloudRasterisation(
+        #     config=GaussianPointCloudRasterisation.GaussianPointCloudRasterisationConfig(
+        #         near_plane=0.001,
+        #         far_plane=1000.,
+        #         depth_to_sort_key_scale=100.))
+        
+        self.rasteriser = GaussianPointCloudPoseRasterisation(
+            config=GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationConfig(
                 near_plane=0.001,
                 far_plane=1000.,
                 depth_to_sort_key_scale=100.))
@@ -258,19 +265,34 @@ class GaussianPointVisualizer:
               last_mouse_pos=None,
           )
           with torch.no_grad():
-                  image, depth, _, _= self.rasteriser(
-                      GaussianPointCloudRasterisation.GaussianPointCloudRasterisationInput(
-                          point_cloud=self.scene.point_cloud,
-                          point_cloud_features=self.scene.point_cloud_features,
-                          point_invalid_mask=self.scene.point_invalid_mask,
-                          point_object_id=self.scene.point_object_id,
-                          camera_info=self.camera_info,
-                          q_pointcloud_camera=self.state.next_q_pointcloud_camera,
-                          t_pointcloud_camera=self.state.next_t_pointcloud_camera,
-                          color_max_sh_band=3,
-                      )
+                delta = torch.zeros((6, 1))
+                gaussian_point_cloud_rasterisation_input = GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
+                    point_cloud=self.scene.point_cloud,
+                    point_cloud_features=self.scene.point_cloud_features,
+                    point_object_id=self.scene.point_object_id,
+                    point_invalid_mask=self.scene.point_invalid_mask,
+                    camera_info=self.camera_info,
+                    delta=delta,
+                    initial_q=self.state.next_q_pointcloud_camera.detach().cpu().numpy(),
+                    initial_t=self.state.next_t_pointcloud_camera.detach().cpu().numpy(),
+                    color_max_sh_band=3
+                )
+                # image, depth, _, _= self.rasteriser(
+                #       GaussianPointCloudRasterisation.GaussianPointCloudRasterisationInput(
+                #           point_cloud=self.scene.point_cloud,
+                #           point_cloud_features=self.scene.point_cloud_features,
+                #           point_invalid_mask=self.scene.point_invalid_mask,
+                #           point_object_id=self.scene.point_object_id,
+                #           camera_info=self.camera_info,
+                #           q_pointcloud_camera=self.state.next_q_pointcloud_camera,
+                #           t_pointcloud_camera=self.state.next_t_pointcloud_camera,
+                #           color_max_sh_band=3,
+                #       )
+                #   )
+                image, depth, _, _= self.rasteriser(
+                      gaussian_point_cloud_rasterisation_input
                   )
-
+                  
           torchImage2tiImage(self.image_buffer, image)
           # Assuming field is a 2D ti.field
           # You may need to convert the ti.field to a numpy array before displaying

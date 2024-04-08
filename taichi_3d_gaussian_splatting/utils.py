@@ -462,7 +462,6 @@ def quaternion_multiply_torch(
     w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
     return torch.stack([x, y, z, w], dim=-1)
 
-
 def quaternion_rotate_torch(
     q: torch.Tensor,  # (batch_size, 4)
     v: torch.Tensor,  # (batch_size, 3)

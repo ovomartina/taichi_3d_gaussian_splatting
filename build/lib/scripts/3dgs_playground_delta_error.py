@@ -4,8 +4,8 @@ import taichi as ti
 from taichi_3d_gaussian_splatting.Camera import CameraInfo
 from taichi_3d_gaussian_splatting.GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterisation
 from taichi_3d_gaussian_splatting.GaussianPointCloudScene import GaussianPointCloudScene
-from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation_torch, \
-    quaternion_to_rotation_matrix_torch, perturb_pose_quaternion_translation_torch
+from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation_torch
+from pytorch_msssim import ssim
 from dataclasses import dataclass
 from typing import List, Tuple
 import torch
@@ -16,9 +16,13 @@ import PIL.Image
 import torchvision
 from taichi_3d_gaussian_splatting.GaussianPointTrainer import GaussianPointCloudTrainer
 import matplotlib.pyplot as plt
-
+import torchvision
 import sym
 
+R_pontcloud_pointcloudstar = np.array([[-0.5614035,  0.7017544, -0.4385965],
+                                       [-0.7017544, -0.1228070,  0.7017544],
+                                       [0.4385965,  0.7017544,  0.5614035]])
+t_pointcloud_pointcloudstar = np.array([-0.018, 0.006, 0.007]).T
 
 def extract_q_t_from_pose(pose3: sym.Pose3) -> Tuple[torch.Tensor, torch.Tensor]:
     q = torch.tensor(
@@ -27,6 +31,17 @@ def extract_q_t_from_pose(pose3: sym.Pose3) -> Tuple[torch.Tensor, torch.Tensor]
         [pose3.position()]).to(torch.float32)
     return q, t
 
+def quaternion_multiply_numpy(
+    q0,
+    q1,
+):
+    x0, y0, z0, w0 = q0[..., 0], q0[..., 1], q0[..., 2], q0[..., 3]
+    x1, y1, z1, w1 = q1[..., 0], q1[..., 1], q1[..., 2], q1[..., 3]
+    x = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1
+    y = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1
+    z = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1
+    w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
+    return torch.stack([x, y, z, w], dim=-1)
 
 class PoseEstimator():
     @dataclass
@@ -84,7 +99,6 @@ class PoseEstimator():
         self.image_buffer = ti.Vector.field(3, dtype=ti.f32, shape=(
             self.config.image_width, self.config.image_height))
 
-
     def _merge_scenes(self, scene_list):
         # the config does not matter here, only for training
 
@@ -119,10 +133,21 @@ class PoseEstimator():
 
     def start(self):
         d = self.config.image_path_list
-        count = 0
+
         with open(self.config.json_file_path) as f:
             d = json.load(f)
+            errors_t = []
+            errors_q = []
+            count = 0
             for view in d:
+                count += 1
+                print(
+                    f"=================Image {count-1}========================")
+                if count % 3 != 0:
+                    continue
+
+                # if count > 1:
+                #     break
                 # Load groundtruth image
                 ground_truth_image_path = view["image_path"]
                 print(f"Loading image {ground_truth_image_path}")
@@ -161,11 +186,10 @@ class PoseEstimator():
                 if not os.path.exists(os.path.join(self.output_path, f'groundtruth/')):
                     os.makedirs(os.path.join(self.output_path, 'groundtruth/'))
                 im.save(os.path.join(self.output_path,
-                        f'groundtruth/groundtruth_{count}.png'))
+                        f'groundtruth/groundtruth_{count-1}.png'))
 
-                num_epochs = 3000
-                errors_t = []
-                errors_q = []
+                errors_t_current_pic = []
+                errors_q_current_pic = []
 
                 rotation_groundtruth = sym.Rot3(
                     groundtruth_q_pointcloud_camera_numpy[0, :])
@@ -173,23 +197,28 @@ class PoseEstimator():
                     R=rotation_groundtruth, t=groundtruth_t_pointcloud_camera_numpy.T.astype("float"))
 
                 print(f"Pose groundtruth:\n\t{pose_groundtruth}")
-                
+
                 # std = 0.1, First 3 elements: rotation last 3 elements: translation
-                delta_numpy_array_q = np.random.normal(0, 0.15, (3, 1))
-                delta_numpy_array_t = np.random.normal(0, 0.2, (3, 1))
-                delta_numpy_array = np.vstack((delta_numpy_array_q, delta_numpy_array_t))
+                delta_numpy_array_q = np.random.normal(0, 0.02, (3, 1))
+                delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1))
+                delta_numpy_array = np.vstack(
+                    (delta_numpy_array_q, delta_numpy_array_t))
                 delta_tensor = torch.zeros(
                     (6, 1), requires_grad=True, device="cuda")
+                delta_tensor_q = torch.zeros(
+                    (3, 1), requires_grad=True, device="cuda")
+                delta_tensor_t = torch.zeros(
+                    (3, 1), requires_grad=True, device="cuda")
+                print(f"Delta array:\n\t{delta_numpy_array}")
 
                 epsilon = 0.0001
                 initial_pose = sym.Pose3.retract(
                     pose_groundtruth, delta_numpy_array, epsilon)
 
+                initial_q, initial_t = extract_q_t_from_pose(initial_pose)
+                initial_q_numpy = initial_q.detach().cpu().numpy()
+                initial_t_numpy = initial_t.detach().cpu().numpy()
                 print(f"Initial pose:\n\t{initial_pose}")
-                initial_pose_q = torch.tensor(
-                    [initial_pose.rotation().data[:]]).to(torch.float32)
-                initial_pose_t = torch.tensor(
-                    [initial_pose.position()]).to(torch.float32)
 
                 self.rasteriser = GaussianPointCloudPoseRasterisation(
                     config=GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationConfig(
@@ -197,14 +226,52 @@ class PoseEstimator():
                         far_plane=1000.,
                         depth_to_sort_key_scale=100.,
                         enable_depth_grad=True,
-                        initial_pose=initial_pose))
+                        ))
 
                 # Optimization starts
                 optimizer_delta = torch.optim.Adam(
-                    [delta_tensor], lr=0.001)
-                for epoch in range(num_epochs):
+                    [delta_tensor], lr=0.0005, betas=(0.9, 0.999))
+                optimizer_delta_coarse = torch.optim.Adam(
+                    [delta_tensor], lr=0.001, betas=(0.9, 0.999))
+                optimizer_delta_q = torch.optim.Adam(
+                    [delta_tensor_q], lr=1e-3, betas=(0.9, 0.999))  # 0.005
+                optimizer_delta_t = torch.optim.Adam(
+                    [delta_tensor_t], lr=1e-3, betas=(0.9, 0.999))  # q is in smaller unit that t?
+                scheduler = torch.optim.lr_scheduler.ExponentialLR(
+                    optimizer=optimizer_delta_q, gamma=0.9947)
+                scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
+                    optimizer=optimizer_delta_t, gamma=0.9947)
+                # First: Coarse iterations
+                num_coarse_epochs = 0 #200 #3000
+                num_epochs = 400  # 1000
+                downsample_factor = 4
+                ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
+                                                                                                                                                 None,
+                                                                                                                                                 self.camera_info,
+                                                                                                                                                 downsample_factor)
+                # # DEBUG
+                # newsize = (self.config.image_width, self.config.image_height)
+                # ground_truth_image_downsampled = ground_truth_image_downsampled.resize(newsize)
+                # resized_camera_info_downsampled = resized_camera_info
+                # ##################
+                
+                # Save coarse groundtruth image
+                ground_truth_image_downsampled_numpy = ground_truth_image_downsampled.clone(
+                ).detach().cpu().numpy()
+                im = PIL.Image.fromarray(
+                    (ground_truth_image_downsampled_numpy.transpose(1, 2, 0)*255).astype(np.uint8))
+                im.save(os.path.join(self.output_path,
+                        f'groundtruth/groundtruth_{count-1}_coarse.png'))
 
-                    # Add error to plot
+                for epoch in range(num_coarse_epochs):
+                    # Set the gradient to zero
+                    # optimizer_delta_coarse.zero_grad()
+                    optimizer_delta_q.zero_grad()
+                    optimizer_delta_t.zero_grad()
+
+                    delta_tensor = torch.cat(
+                        (delta_tensor_q, delta_tensor_t), axis=0)
+                    # Compute current error
                     with torch.no_grad():
                         epsilon = 0.0001
                         delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
@@ -214,12 +281,22 @@ class PoseEstimator():
                             current_pose)
                         current_q_numpy_array = current_q.clone().detach().cpu().numpy()
                         current_t_numpy_array = current_t.clone().detach().cpu().numpy()
-                        errors_t.append(np.linalg.norm(current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy()))
-                        errors_q.append(np.linalg.norm(current_q_numpy_array - groundtruth_q_pointcloud_camera.cpu().numpy()))
+                        errors_t_current_pic.append(
+                            current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy())
+                        # errors_q_current_pic.append(
+                        #     current_q_numpy_array - groundtruth_q_pointcloud_camera.cpu().numpy())
                         
-
-                    # Set the gradient to zero
-                    optimizer_delta.zero_grad()
+                        # Quaternion error as rad
+                        q_pointcloud_camera_gt_inverse = groundtruth_q_pointcloud_camera * \
+                            torch.tensor([-1., -1., -1., 1.], device="cuda")
+                        q_difference = quaternion_multiply_numpy(q_pointcloud_camera_gt_inverse.reshape(
+                            (1, 4)), current_q.reshape((1, 4)).cuda(),)
+                        q_difference = q_difference.cpu().numpy()
+                        angle_difference = np.abs(
+                            2*np.arctan2(np.linalg.norm(q_difference[0, 0:3]), q_difference[0, 3]))
+                        if angle_difference > np.pi:
+                            angle_difference = 2*np.pi - angle_difference
+                        errors_q_current_pic.append(angle_difference)
 
                     predicted_image, _, _, _ = self.rasteriser(
                         GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
@@ -228,20 +305,138 @@ class PoseEstimator():
                             point_invalid_mask=self.scene.point_invalid_mask,
                             point_object_id=self.scene.point_object_id,
                             delta=delta_tensor,
-                            camera_info=self.camera_info,
+                            # initial_q=current_q_numpy_array,
+                            # initial_t=current_t_numpy_array,
+                            initial_q=initial_q_numpy,
+                            initial_t=initial_t_numpy,
+                            camera_info=resized_camera_info_downsampled,
                             color_max_sh_band=3,
                         )
                     )
+
+                    predicted_image = torch.clamp(
+                        predicted_image, min=0, max=1)
                     predicted_image = predicted_image.permute(2, 0, 1)
-                    L1 = torch.abs(predicted_image - ground_truth_image).mean()
+
+                    L1 = torch.abs(predicted_image -
+                                   ground_truth_image_downsampled).mean()
                     L1.backward()
 
-                    if not torch.isnan(delta_tensor.grad).any():
-                        torch.nn.utils.clip_grad_norm_(
-                            delta_tensor, max_norm=1.0)
-                        optimizer_delta.step()
+                    # if not torch.isnan(delta_tensor.grad).any():
+                    # optimizer_delta_coarse.step()
+                    if (not torch.isnan(delta_tensor_q.grad).any()):
+                        optimizer_delta_q.step()
+                    if (not torch.isnan(delta_tensor_t.grad).any()):
+                        optimizer_delta_t.step()
 
                     if epoch % 50 == 0:
+                        print(L1)
+
+                    if epoch % 300 == 0:
+                        image_np = predicted_image.clone().detach().cpu().numpy()
+                        im = PIL.Image.fromarray(
+                            (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
+                        if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count-1}/')):
+                            os.makedirs(os.path.join(
+                                self.output_path, f'epochs_delta_{count-1}/'))
+                        im.save(os.path.join(self.output_path,
+                                             f'epochs_delta_{count-1}/coarse_{epoch}.png'))
+
+                    if epoch % 5 == 0:
+                        scheduler.step()
+                        for param_group in optimizer_delta_q.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+                        scheduler_t.step()
+                        for param_group in optimizer_delta_t.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+
+                epsilon = 0.0001
+                delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
+                current_pose = initial_pose.retract(
+                    delta_numpy_array, epsilon=epsilon)
+                print(f"Initial pose:\n\t{initial_pose}")
+                print(
+                    f"Current pose (after coarse refinement):\n\t{current_pose}")
+                print(f"Ground truth pose:\n\t{pose_groundtruth}")
+
+                # Pose refinement
+                for epoch in range(num_epochs):
+                    # Add error to plot
+                    with torch.no_grad():
+                        epsilon = 0.0001
+                        delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
+                        current_pose = initial_pose.retract(
+                            delta_numpy_array, epsilon=epsilon)
+                        current_q, current_t = extract_q_t_from_pose(
+                            current_pose)
+                        current_t_numpy_array = current_t.clone().detach().cpu().numpy()
+                        errors_t_current_pic.append(
+                            current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy())  # Mantain axes
+                        
+                        # Quaternion error as rad
+                        q_pointcloud_camera_gt_inverse = groundtruth_q_pointcloud_camera * \
+                            torch.tensor([-1., -1., -1., 1.], device="cuda")
+                        q_difference = quaternion_multiply_numpy(q_pointcloud_camera_gt_inverse.reshape(
+                            (1, 4)), current_q.reshape((1, 4)).cuda(),)
+                        q_difference = q_difference.cpu().numpy()
+                        angle_difference = np.abs(
+                            2*np.arctan2(np.linalg.norm(q_difference[0, 0:3]), q_difference[0, 3]))
+                        if angle_difference > np.pi:
+                            angle_difference = 2*np.pi - angle_difference
+                        errors_q_current_pic.append(angle_difference)
+                        
+                    # Set the gradient to zero
+                    delta_tensor = torch.cat(
+                        (delta_tensor_q, delta_tensor_t), axis=0)
+                    optimizer_delta_q.zero_grad()
+                    optimizer_delta_t.zero_grad()
+
+                    predicted_image, _, _, _ = self.rasteriser(
+                        GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
+                            point_cloud=self.scene.point_cloud,
+                            point_cloud_features=self.scene.point_cloud_features,
+                            point_invalid_mask=self.scene.point_invalid_mask,
+                            point_object_id=self.scene.point_object_id,
+                            delta=delta_tensor,
+                            # initial_q=current_q_numpy_array,
+                            # initial_t=current_t_numpy_array,
+                            initial_q=initial_q_numpy,
+                            initial_t=initial_t_numpy,
+                            camera_info=resized_camera_info,
+                            color_max_sh_band=3,
+                        )
+                    )
+
+                    predicted_image = torch.clamp(
+                        predicted_image, min=0, max=1)
+                    predicted_image = predicted_image.permute(2, 0, 1)
+
+                    if len(predicted_image.shape) == 3:
+                        predicted_image_temp = predicted_image.unsqueeze(0)
+                    if len(ground_truth_image.shape) == 3:
+                        ground_truth_image_temp = ground_truth_image.unsqueeze(0)
+                    L1 = torch.abs(predicted_image - ground_truth_image).mean()
+                    # L1 = 0.8*torch.abs(predicted_image - ground_truth_image).mean()  + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
+                    #        data_range=1, size_average=True))
+                    L1.backward()
+
+                    if (not torch.isnan(delta_tensor_q.grad).any()) and (not torch.isnan(delta_tensor_t.grad).any()):
+                        optimizer_delta_q.step()
+                        optimizer_delta_t.step()
+                        
+                    if epoch % 5 == 0:
+                        scheduler.step()
+                        for param_group in optimizer_delta_q.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+                        scheduler_t.step()
+                        for param_group in optimizer_delta_t.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+
+                    if epoch % 100 == 0:
                         with torch.no_grad():
                             print(
                                 f"============== epoch {epoch} ==========================")
@@ -261,23 +456,90 @@ class PoseEstimator():
 
                             im = PIL.Image.fromarray(
                                 (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
-                            if not os.path.exists(os.path.join(self.output_path, f'epochs_delta/')):
+                            if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count-1}/')):
                                 os.makedirs(os.path.join(
-                                    self.output_path, 'epochs_delta/'))
+                                    self.output_path, f'epochs_delta_{count-1}/'))
                             im.save(os.path.join(self.output_path,
-                                    f'epochs_delta/epoch_{epoch}.png'))
+                                    f'epochs_delta_{count-1}/epoch_{epoch}.png'))
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs_delta/epoch_{epoch}_q.txt'), current_q.cpu().detach().numpy())
+                                self.output_path, f'epochs_delta_{count-1}/epoch_{epoch}_q.txt'), current_q.cpu().detach().numpy())
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs_delta/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
-                plt.plot(errors_q)
-                plt.plot(errors_t)
-                plt.xlabel("File Index")
+                                self.output_path, f'epochs_delta_{count-1}/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
+
+                errors_t_current_pic = np.array(errors_t_current_pic)
+                errors_t_current_pic = errors_t_current_pic.reshape(
+                    (num_epochs + num_coarse_epochs, 3))
+                errors_q_current_pic = np.array(errors_q_current_pic)
+                errors_q_current_pic = errors_q_current_pic.reshape(
+                    (num_epochs + num_coarse_epochs, 1))
+                errors_t.append(errors_t_current_pic)
+                errors_q.append(errors_q_current_pic)
+
+                plt.plot(errors_q_current_pic[:, 0], color='red', label='x')
+                plt.xlabel("Epoch")
                 plt.ylabel("Error")
-                plt.title("Rotational and translational error")
-                plt.savefig(
-                    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/epochs/rot_trasl_error.png")
-                break  # Only optimize on the first image
+                plt.title("Rotational error")
+                plt.legend()
+                plt.savefig(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/rot_error.png'))
+                plt.clf()
+
+                plt.plot(errors_t_current_pic[:, 0], color='red', label='x')
+                plt.plot(errors_t_current_pic[:, 1], color='green', label='y')
+                plt.plot(errors_t_current_pic[:, 2], color='blue', label='z')
+                plt.xlabel("Epoch")
+                plt.ylabel("Error")
+                plt.title("Translational error")
+                plt.legend()
+                plt.savefig(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/trasl_error.png'))
+                plt.clf()
+
+                np.savetxt(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/error_q.out'), errors_q_current_pic, delimiter=',')
+                np.savetxt(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/error_t.out'), errors_t_current_pic, delimiter=',')
+
+            errors_q_numpy = np.array(errors_q)
+            errors_t_numpy = np.array(errors_t)
+            errors_q_mean = np. mean(
+                errors_q_numpy, axis=0)  # epochs x 1 array
+            errors_t_mean = np. mean(
+                errors_t_numpy, axis=0)  # epochs x 3 array
+
+            plt.plot(errors_q_mean[:, 0])
+            plt.xlabel("Epoch")
+            plt.ylabel("Error")
+            plt.title("Rotational error")
+            plt.savefig(
+                "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/rot_error.png")
+            plt.clf()
+
+            plt.plot(errors_t_mean[:, 0])
+            plt.plot(errors_t_mean[:, 1])
+            plt.plot(errors_t_mean[:, 2])
+            plt.xlabel("Epoch")
+            plt.ylabel("Error")
+            plt.title("Translational error")
+            plt.savefig(
+                "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/trasl_error.png")
+            plt.clf()
+
+            plt.plot(errors_q_mean[500:])
+            plt.xlabel("Epoch")
+            plt.ylabel("Error")
+            plt.title("Rotational error")
+            plt.savefig(
+                "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/rot_error_hq.png")
+            plt.clf()
+
+            plt.plot(errors_t_mean[500:])
+            plt.xlabel("Epoch")
+            plt.ylabel("Error")
+            plt.title("Translational error")
+            plt.savefig(
+                "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/trasl_error_hq.png")
+            plt.clf()
 
 
 parser = argparse.ArgumentParser(description='Parquet file path')

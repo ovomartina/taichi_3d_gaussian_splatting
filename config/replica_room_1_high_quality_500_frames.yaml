@@ -1,50 +1,64 @@
-adaptive-controller-config:
-  densification-view-space-position-gradients-threshold: 0.000006
-  gaussian-split-factor-phi: 1.6
-  num-iterations-densify: 100
-  num-iterations-reset-alpha: 40000 #4000 
-  num-iterations-warm-up: 500
-  reset-alpha-value: -1.9
-  transparent-alpha-threshold: -2.0 #-6.0 
-  floater_num_pixels_threshold: 400000
+adaptive_controller_config: 
+  densification_multi_frame_position_gradients_threshold: 1000.0
+  densification_multi_frame_view_pixel_avg_space_position_gradients_threshold: 1000.0
+  densification_multi_frame_view_space_position_gradients_threshold: 1000.0
+  densification_view_avg_space_position_gradients_threshold: 1000.0
+  densification_view_space_position_gradients_threshold: 6.0e-06
+  enable_ellipsoid_offset: false
+  enable_sample_from_point: true
+  floater_depth_threshold: 100
   floater_near_camrea_num_pixels_threshold: 300000
+  floater_num_pixels_threshold: 400000
+  gaussian_split_factor_phi: 1.6
   iteration_start_remove_floater: 2000
+  num_iterations_densify: 100
+  num_iterations_reset_alpha: 40000
+  num_iterations_warm_up: 500
+  plot_densify_interval: 200
+  reset_alpha_value: -1.9
+  transparent_alpha_threshold: -2.0
+  under_reconstructed_move_factor: 100.0
   under_reconstructed_num_pixels_threshold: 32
-  enable_sample_from_point: True
-gaussian-point-cloud-scene-config:
-  max-num-points-ratio: 100.0
-  num-of-features: 56
-  add_sphere: True
-  initial_alpha: -0.0 #-5.0 
-  max_initial_covariance: 3000.0
-  initial_covariance_ratio: 0.1
-increase-color-max-sh-band-interval: 1000.0
-log-image-interval: 200
-log-loss-interval: 10
-log-metrics-interval: 100
-print-metrics-to-console: False
-enable_taichi_kernel_profiler: True
-log_taichi_kernel_profile_interval: 1000
-log_validation_image: True
+enable_taichi_kernel_profiler: true
 feature_learning_rate: 0.005
-position_learning_rate: 0.00005 
-position_learning_rate_decay_rate: 0.9947
-position_learning_rate_decay_interval: 100
-loss-function-config:
-  lambda-value: 0.2
-  lambda-depth-value: 0.1
-  lambda-smooth-value: 0.0005
-  enable_regularization: False
+gaussian_point_cloud_scene_config: 
+  add_sphere: false #true
+  initial_alpha: -0.0
+  initial_covariance_ratio: 0.1
+  max_initial_covariance: 3000.0
+  max_num_points_ratio: 100.0
+  num_of_features: 56
+  num_points_sphere: 10000
+  sphere_radius_factor: 4.0
+half_downsample_factor_interval: 250
+increase_color_max_sh_band_interval: 1000
+initial_downsample_factor: 1 #4 #DEBUG
+log_image_interval: 200
+log_loss_interval: 10
+log_metrics_interval: 100
+log_taichi_kernel_profile_interval: 1000
+log_validation_image: true
+loss_function_config: 
+  enable_regularization: false
+  lambda_depth_value: 0.1
+  lambda_smooth_value: 0.0005
+  lambda_value: 0.2
   regularization_weight: 0.005
-num-iterations: 30001
-pointcloud-parquet-path: 'data/replica_colmap/room_1_high_quality_500_frames/point_cloud.parquet'
-rasterisation-config:
-  depth-to-sort-key-scale: 100.0
-  far-plane: 1000.0
-  near-plane: 0.001
-summary-writer-log-dir: 'logs/replica_colmap/room_1_high_quality_500_frames'
-train-dataset-json-path: 'data/replica_colmap/room_1_high_quality_500_frames/train.json'
-val-dataset-json-path: 'data/replica_colmap/room_1_high_quality_500_frames/val.json'
-val-interval: 1000
-noise-std-q: 0.05
-noise-std-t: 0.2
+noise_std_q: 0.0
+noise_std_t: 0.0
+num_iterations: 20001
+output_model_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment
+pointcloud_parquet_path: data/replica_colmap/room_1_high_quality_500_frames/point_cloud.parquet
+position_learning_rate: 5.0e-05
+position_learning_rate_decay_interval: 100
+position_learning_rate_decay_rate: 0.9947
+print_metrics_to_console: false
+rasterisation_config: 
+  depth_to_sort_key_scale: 100.0
+  far_plane: 1000.0
+  near_plane: 0.001
+  rgb_only: false
+summary_writer_log_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment
+train_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/train.json
+val_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/val.json
+val_interval: 1000
