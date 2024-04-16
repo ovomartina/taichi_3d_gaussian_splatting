@@ -9,7 +9,7 @@ from groundtruth_centroids_evaluation import point_cloud_groundtruth_comparison,
 import argparse
 import string
 
-use_colmap = True
+use_colmap = False
 
 def apply_transformation(groundtruth_file_path, pointcloud_reconstruction_path, transform_path, show_pointclouds=False, show_plots=False):
     
@@ -25,15 +25,15 @@ def apply_transformation(groundtruth_file_path, pointcloud_reconstruction_path, 
     # R = room_1_transform[:3,:3]
     # room_1_transform[:3,:3]= R.T
     # room_1_transform[:3, 3]= -R.T @ room_1_transform[:3, 3]
-    print(room_1_transform)
+    print(f"Transformation: {room_1_transform}")
     
     # np.savetxt(transform_path, room_1_transform, delimiter=',') # TO REMOVE
     t = [1.57756, 0.762392,0.055458] # for sugar
     pc_reconstruction = o3d.io.read_point_cloud(pointcloud_reconstruction_path)   
     
     pc_reconstruction.transform(room_1_transform)
-    pc_reconstruction.scale(0.487367, center=pc_reconstruction.get_center())
-    pc_reconstruction.translate(t)  
+    # pc_reconstruction.scale(0.487367, center=pc_reconstruction.get_center())
+    # pc_reconstruction.translate(t)  
     return pc_reconstruction
 
 def align(target, source):
@@ -95,8 +95,8 @@ def main(transform_path: string, output_folder_path: string, groundtruth_path: s
         completePointSet_pcd = o3d.geometry.PointCloud()
         print(len(completePointSet_pcd.points))
         completePointSet_pcd.points =  o3d.utility.Vector3dVector(completePointSet)
-        completePointSet_aligned = align(pc_groundtruth, completePointSet_pcd)
-        # completePointSet_aligned = completePointSet_pcd
+        # completePointSet_aligned = align(pc_groundtruth, completePointSet_pcd)
+        completePointSet_aligned = completePointSet_pcd
         
         # Visualize pointcloud ensemble
         pc_groundtruth.paint_uniform_color([0,0,1])

@@ -6,7 +6,7 @@ from .GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterisa
 from .GaussianPointAdaptiveController import GaussianPointAdaptiveController
 from .LossFunction import LossFunction
 from .Lidar import Lidar
-from .utils import quaternion_to_rotation_matrix_torch
+from .utils import quaternion_to_rotation_matrix_torch, inverse_SE3, SE3_to_quaternion_and_translation_torch
 
 import torch
 from dataclass_wizard import YAMLWizard
@@ -28,16 +28,27 @@ from torchvision.transforms import ToTensor
 import sym
 import pandas as pd
 
+# DEBUG - allow reproducibility
+torch.manual_seed(42)
+
 
 def cycle(dataloader):
     while True:
         for data in dataloader:
             yield data
 
+
+def collate_fn(batch):
+    # Sort the batch based on the "index" field
+    sorted_batch = sorted(batch, key=lambda x: x['index'])
+    return sorted_batch
+
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
-    
+
+
 def extract_q_t_from_pose(pose3: sym.Pose3) -> Tuple[torch.Tensor, torch.Tensor]:
     q = torch.tensor(
         [pose3.rotation().data[:]]).to(torch.float32)
@@ -58,38 +69,40 @@ def quaternion_multiply_numpy(
     w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
     return torch.stack([x, y, z, w], dim=-1)
 
-def merge_scenes(scene_list):
-        # the config does not matter here, only for training
 
-        merged_point_cloud = torch.cat(
-            [scene.point_cloud for scene in scene_list], dim=0)
-        merged_point_cloud_features = torch.cat(
-            [scene.point_cloud_features for scene in scene_list], dim=0)
-        num_of_points_list = [scene.point_cloud.shape[0]
-                              for scene in scene_list]
-        start_offset_list = [0] + np.cumsum(num_of_points_list).tolist()[:-1]
-        end_offset_list = np.cumsum(num_of_points_list).tolist()
-        # self.extra_scene_info_dict = {
-        #     idx: self.ExtraSceneInfo(
-        #         start_offset=start_offset,
-        #         end_offset=end_offset,
-        #         center=scene_list[idx].point_cloud.mean(dim=0),
-        #         visible=True
-        #     ) for idx, (start_offset, end_offset) in enumerate(zip(start_offset_list, end_offset_list))
-        # }
-        point_object_id = torch.zeros(
-            (merged_point_cloud.shape[0],), dtype=torch.int32, device="cuda")
-        for idx, (start_offset, end_offset) in enumerate(zip(start_offset_list, end_offset_list)):
-            point_object_id[start_offset:end_offset] = idx
-        merged_scene = GaussianPointCloudScene(
-            point_cloud=merged_point_cloud,
-            point_cloud_features=merged_point_cloud_features,
-            point_object_id=point_object_id,
-            config=GaussianPointCloudScene.PointCloudSceneConfig(
-                max_num_points_ratio=None
-            ))
-        return merged_scene
-    
+def merge_scenes(scene_list):
+    # the config does not matter here, only for training
+
+    merged_point_cloud = torch.cat(
+        [scene.point_cloud for scene in scene_list], dim=0)
+    merged_point_cloud_features = torch.cat(
+        [scene.point_cloud_features for scene in scene_list], dim=0)
+    num_of_points_list = [scene.point_cloud.shape[0]
+                          for scene in scene_list]
+    start_offset_list = [0] + np.cumsum(num_of_points_list).tolist()[:-1]
+    end_offset_list = np.cumsum(num_of_points_list).tolist()
+    # self.extra_scene_info_dict = {
+    #     idx: self.ExtraSceneInfo(
+    #         start_offset=start_offset,
+    #         end_offset=end_offset,
+    #         center=scene_list[idx].point_cloud.mean(dim=0),
+    #         visible=True
+    #     ) for idx, (start_offset, end_offset) in enumerate(zip(start_offset_list, end_offset_list))
+    # }
+    point_object_id = torch.zeros(
+        (merged_point_cloud.shape[0],), dtype=torch.int32, device="cuda")
+    for idx, (start_offset, end_offset) in enumerate(zip(start_offset_list, end_offset_list)):
+        point_object_id[start_offset:end_offset] = idx
+    merged_scene = GaussianPointCloudScene(
+        point_cloud=merged_point_cloud,
+        point_cloud_features=merged_point_cloud_features,
+        point_object_id=point_object_id,
+        config=GaussianPointCloudScene.PointCloudSceneConfig(
+            max_num_points_ratio=None
+        ))
+    return merged_scene
+
+
 class GaussianPointTrainerBundleAdjustment:
     delta_list = []
     delta_q_list = []
@@ -129,8 +142,8 @@ class GaussianPointTrainerBundleAdjustment:
         enable_taichi_kernel_profiler: bool = False
         log_taichi_kernel_profile_interval: int = 1000
         log_validation_image: bool = True
-        initial_downsample_factor: int = 1 #4 DEBUG
-        half_downsample_factor_interval: int = 25 #250
+        initial_downsample_factor: int = 4
+        half_downsample_factor_interval: int = 25  # 250
         summary_writer_log_dir: str = "logs"
         output_model_dir: Optional[str] = None
         rasterisation_config: GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationConfig = GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationConfig()
@@ -141,7 +154,7 @@ class GaussianPointTrainerBundleAdjustment:
         noise_std_t: float = 0.0
         camera_pose_learning_rate_decay_rate: float = 0.97
         # increase_ba_iterations_interval: int = 10000
-        start_pose_optimization: int = -1000 #7000
+        start_pose_optimization: int = 7000
         save_position: int = 2000
 
     def __init__(self, config: TrainConfig):
@@ -167,9 +180,9 @@ class GaussianPointTrainerBundleAdjustment:
         )
 
         for i in range(len(self.train_dataset)):
-            self.delta_list.append(torch.zeros((6, 1)))
-            self.delta_list[i] = self.delta_list[i].cuda()
-            self.delta_list[i].requires_grad = True
+            # self.delta_list.append(torch.zeros((6, 1)))
+            # self.delta_list[i] = self.delta_list[i].cuda()
+            # self.delta_list[i].requires_grad = True
 
             self.delta_q_list.append(torch.zeros((3, 1), dtype=torch.float64))
             self.delta_q_list[i] = self.delta_q_list[i].cuda()
@@ -179,16 +192,12 @@ class GaussianPointTrainerBundleAdjustment:
             self.delta_t_list[i] = self.delta_t_list[i].cuda()
             self.delta_t_list[i].requires_grad = True
 
-            # self.optimizers_list.append(torch.optim.Adam(
-            #     [self.delta_list[i]], lr=0.001, betas=(0.9, 0.999)))
             # Separate optimization for q and t
             self.optimizers_q_list.append(torch.optim.Adam(
-                [self.delta_q_list[i]], lr=1e-3, betas=(0.9, 0.999)))
+                [self.delta_q_list[i]], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2))
             self.optimizers_t_list.append(torch.optim.Adam(
-                [self.delta_t_list[i]], lr=0, betas=(0.9, 0.999))) #For now t is fixed
+                [self.delta_t_list[i]], lr=5e-3, betas=(0.9, 0.999), weight_decay=1e-2))
 
-            # self.pose_scheduler_list.append(torch.optim.lr_scheduler.ExponentialLR(
-            #     optimizer=self.optimizers_list[i], gamma=self.config.camera_pose_learning_rate_decay_rate))
             self.q_scheduler_list.append(torch.optim.lr_scheduler.ExponentialLR(
                 optimizer=self.optimizers_q_list[i], gamma=0.9947))
             self.t_scheduler_list.append(torch.optim.lr_scheduler.ExponentialLR(
@@ -198,17 +207,17 @@ class GaussianPointTrainerBundleAdjustment:
                               [0.48165509,  0.04348471, -0.06376747,  0.4119509],
                               [0.02594256, -0.47077614, -0.12508256, -0.20647023],
                               [0.,          0.,          0.,          1.]])
-        # self.scene = GaussianPointCloudScene.from_parquet(
-        #     self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
-        scene_old = GaussianPointCloudScene.from_parquet(
-             self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
-        # DEBUG: load scene already trained 30k iterations
-        scene = GaussianPointCloudScene.from_parquet(
-            "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet", config=GaussianPointCloudScene.PointCloudSceneConfig(max_num_points_ratio=None))
-        self.scene = merge_scenes([scene])
+        transform = np.eye(4)
+        self.scene = GaussianPointCloudScene.from_parquet(
+            self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
+
+        # # DEBUG: load scene already trained 30k iterations
+        # scene = GaussianPointCloudScene.from_parquet(
+        #     "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet", config=GaussianPointCloudScene.PointCloudSceneConfig(max_num_points_ratio=None))
+        # self.scene = merge_scenes([scene])
+
         self.scene = self.scene.cuda()
         self.scene.point_cloud = self.scene.point_cloud.contiguous()
-
 
         self.adaptive_controller = GaussianPointAdaptiveController(
             config=self.config.adaptive_controller_config,
@@ -301,87 +310,97 @@ class GaussianPointTrainerBundleAdjustment:
         total_iteration_count = 0
         scene_iteration_count = 0
         pose_iteration_count = 0
-        optimize_pose = True # False
+        optimize_pose = False
         previous_smooth = None
         previous_depth_loss = None
         previous_ssim_loss = None
-        increase_pose_iterations_from = 40000
+        increase_pose_iterations_from = self.config.start_pose_optimization
+        count_10 = 0
+        df = pd.read_json(
+            "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/data/replica_colmap/room_1_high_quality_500_frames/train_groundtruth.json", orient="records")
+
         while total_iteration_count < self.config.num_iterations:
             image_gt, q_pointcloud_camera_current, t_pointcloud_camera_current, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera_gt, t_pointcloud_camera_gt = next(
                 train_data_loader_iter)
 
+            # # DEBUG colmap =======================================================
+            # q_pointcloud_camera_current = q_pointcloud_camera_gt
+            # t_pointcloud_camera_current = t_pointcloud_camera_gt
+            # groundtruth_T_colmap_camera = torch.tensor(
+            #     df.iloc[index]["T_colmap_camera"])
+            # q_pointcloud_camera_gt, t_pointcloud_camera_gt = SE3_to_quaternion_and_translation_torch(groundtruth_T_colmap_camera.unsqueeze(0))
+            # # ====================================================================
+            
             # Sanity check
-            if total_iteration_count < self.config.start_pose_optimization:
+            # if total_iteration_count < self.config.start_pose_optimization:
+            #     groundtruth_q[index] = q_pointcloud_camera_gt
+            #     groundtruth_t[index] = t_pointcloud_camera_gt
+
+            #     q_pointcloud_camera, t_pointcloud_camera = q_pointcloud_camera_gt, t_pointcloud_camera_gt
+
+            #     # Generate Pose3 Object
+            #     q_pointcloud_camera_numpy = q_pointcloud_camera.detach().cpu().numpy()
+            #     t_pointcloud_camera_numpy = t_pointcloud_camera.detach().cpu().numpy()
+            #     noisy_rotation = sym.Rot3(
+            #         q_pointcloud_camera_numpy[0, :])
+            #     initial_noisy_pose = sym.Pose3(
+            #         R=noisy_rotation, t=t_pointcloud_camera_numpy.T.astype("float"))
+            #     initial_noisy_poses[index] = initial_noisy_pose
+
+            #     initial_q[index] = q_pointcloud_camera_numpy
+            #     initial_t[index] = t_pointcloud_camera_numpy
+
+            # else:
+            delta_tensor = torch.cat(
+                (self.delta_q_list[index], self.delta_t_list[index]), axis=0).contiguous()
+
+            if first_iteration[index]:
                 groundtruth_q[index] = q_pointcloud_camera_gt
                 groundtruth_t[index] = t_pointcloud_camera_gt
 
-                q_pointcloud_camera, t_pointcloud_camera = q_pointcloud_camera_gt, t_pointcloud_camera_gt
+                q_pointcloud_camera, t_pointcloud_camera = q_pointcloud_camera_current, t_pointcloud_camera_current
+
+                first_iteration[index] = False
 
                 # Generate Pose3 Object
-                q_pointcloud_camera_numpy = q_pointcloud_camera.detach().cpu().numpy()
-                t_pointcloud_camera_numpy = t_pointcloud_camera.detach().cpu().numpy()
+                noisy_q_pointcloud_camera_numpy = q_pointcloud_camera.detach().cpu().numpy()
+                noisy_t_pointcloud_camera_numpy = t_pointcloud_camera.detach().cpu().numpy()
                 noisy_rotation = sym.Rot3(
-                    q_pointcloud_camera_numpy[0, :])
+                    noisy_q_pointcloud_camera_numpy[0, :])
                 initial_noisy_pose = sym.Pose3(
-                    R=noisy_rotation, t=t_pointcloud_camera_numpy.T.astype("float"))
+                    R=noisy_rotation, t=noisy_t_pointcloud_camera_numpy.T.astype("float"))
                 initial_noisy_poses[index] = initial_noisy_pose
 
-                initial_q[index] = q_pointcloud_camera_numpy
-                initial_t[index] = t_pointcloud_camera_numpy
+                groundtruth_rotation = sym.Rot3(
+                    groundtruth_q[index].detach().cpu().numpy().reshape((1, 4)))
+                groundtruth_pose = sym.Pose3(
+                    R=groundtruth_rotation, t=groundtruth_t[index].detach().cpu().numpy().reshape((1, 3)).astype("float"))
 
+                # Save optimal transformation for later
+                delta_pose_2 = sym.Pose3.local_coordinates(
+                    initial_noisy_poses[index], groundtruth_pose)  # THIS IS CORRECT
+                optimal_delta[index] = (delta_pose_2).reshape((1, 6))
+                debug = sym.Pose3.retract(
+                    initial_noisy_poses[index], optimal_delta[index].reshape((6, 1)),  0.0000001)  # THIS IS CORRECT
+                print(
+                    f"Debug: rotation {debug.rotation()}, translation: {debug.position()}")
+                # print(f"Storage D tangent: {debug.storage_D_tangent()}")
+                # initial_q[index] = q_pointcloud_camera_current.cpu().numpy()
+                # initial_t[index] = t_pointcloud_camera_current.cpu().numpy()
+
+                # set to GT
+                initial_q[index] = noisy_q_pointcloud_camera_numpy
+                initial_t[index] = noisy_t_pointcloud_camera_numpy
             else:
-                delta_tensor = torch.cat(
-                    (self.delta_q_list[index], self.delta_t_list[index]), axis=0).contiguous()
-
-                if first_iteration[index]:
-                    groundtruth_q[index] = q_pointcloud_camera_gt
-                    groundtruth_t[index] = t_pointcloud_camera_gt
-
-                    q_pointcloud_camera, t_pointcloud_camera = q_pointcloud_camera_current, t_pointcloud_camera_current
-                    
-                    # set to GT DEBUG
-                    # q_pointcloud_camera, t_pointcloud_camera = q_pointcloud_camera_gt, t_pointcloud_camera_gt
-                    t_pointcloud_camera = t_pointcloud_camera_gt
-                    
-                    first_iteration[index] = False
-                    # Generate Pose3 Object
-                    noisy_q_pointcloud_camera_numpy = q_pointcloud_camera.detach().cpu().numpy()
-                    noisy_t_pointcloud_camera_numpy = t_pointcloud_camera.detach().cpu().numpy()
-                    noisy_rotation = sym.Rot3(
-                        noisy_q_pointcloud_camera_numpy[0, :])
-                    initial_noisy_pose = sym.Pose3(
-                        R=noisy_rotation, t=noisy_t_pointcloud_camera_numpy.T.astype("float"))
-                    initial_noisy_poses[index] = initial_noisy_pose
-
-                    groundtruth_rotation = sym.Rot3(
-                        groundtruth_q[index].detach().cpu().numpy().reshape((1, 4)))
-                    groundtruth_pose = sym.Pose3(
-                        R=groundtruth_rotation, t=groundtruth_t[index].detach().cpu().numpy().reshape((1, 3)).astype("float"))
-
-                    # Save optimal transformation for later
-                    delta_pose_2 = sym.Pose3.local_coordinates(
-                        initial_noisy_poses[index], groundtruth_pose)  # THIS IS CORRECT
-                    optimal_delta[index] = (delta_pose_2).reshape((1, 6))
-                    debug = sym.Pose3.retract(
-                        initial_noisy_poses[index], optimal_delta[index].reshape((6, 1)),  0.0000001)  # THIS IS CORRECT
-                    print(
-                        f"Debug: rotation {debug.rotation()}, translation: {debug.position()}")
-                    # print(f"Storage D tangent: {debug.storage_D_tangent()}")
-                    # initial_q[index] = q_pointcloud_camera_current.cpu().numpy()
-                    # initial_t[index] = t_pointcloud_camera_current.cpu().numpy()
-                    # set to GT
-                    initial_q[index] = noisy_q_pointcloud_camera_numpy
-                    initial_t[index] = noisy_t_pointcloud_camera_numpy
-                else:
-                    epsilon = 0.0001
-                    # delta_numpy_array = self.delta_list[index].clone(
-                    # ).detach().cpu().numpy()
-                    delta_numpy_array = delta_tensor.clone(
-                    ).detach().cpu().numpy()
-                    current_pose = sym.Pose3.retract(
-                        initial_noisy_poses[index], delta_numpy_array, epsilon)
-                    q_pointcloud_camera, t_pointcloud_camera = extract_q_t_from_pose(
-                        initial_noisy_poses[index])
+                epsilon = 0.0001
+                # delta_numpy_array = self.delta_list[index].clone(
+                # ).detach().cpu().numpy()
+                delta_numpy_array = delta_tensor.clone(
+                ).detach().cpu().numpy()
+                current_pose = sym.Pose3.retract(
+                    initial_noisy_poses[index], delta_numpy_array, epsilon)
+                q_pointcloud_camera, t_pointcloud_camera = extract_q_t_from_pose(
+                    initial_noisy_poses[index])
 
             image_gt = image_gt.cuda()
             depth_gt = depth_gt.cuda()
@@ -397,17 +416,18 @@ class GaussianPointTrainerBundleAdjustment:
             camera_info_original = camera_info
             depth_gt_original = depth_gt
 
+            # if total_iteration_count%increase_pose_iterations==0:
+            #         pose_iterations = int(pose_iterations*pose_iteration_increase_factor)
+            pose_iterations = 10
+            coarse_iterations = 0
+            # if total_iteration_count > increase_pose_iterations_from:
+            #     pose_iterations = 30
+
             if optimize_pose:
                 print("optimizing pose")
-                # for k in range(self.iterations_pose):
+                # for k in range(30):
+                for k in range(pose_iterations):
 
-                if total_iteration_count > increase_pose_iterations_from:
-                    pose_iterations = 10
-                else:
-                    pose_iterations = 1
-
-                # for k in range(pose_iterations):
-                for k in range(30):
                     image_gt = image_gt_original
                     camera_info = camera_info_original
                     depth_gt = depth_gt_original
@@ -419,10 +439,16 @@ class GaussianPointTrainerBundleAdjustment:
                     # else:
                     #     image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
                     #         image_gt, depth_gt, camera_info, None, 2)  # Always downsample image for pose optimization
-                    image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
-                        image_gt, depth_gt, camera_info, None, 1)  # Always downsample image for pose optimization
 
-                    #self.optimizers_list[index].zero_grad()
+                    if k < coarse_iterations and downsample_factor < 4:
+                        coarse_downsample_factor = downsample_factor * 2
+                        try:
+                            assert downsample_factor <= 4
+                        except Exception as e:
+                            print("Coarse downsample factor")
+                            print(e)
+                        image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
+                            image_gt, depth_gt, camera_info, None, downsample_factor=coarse_downsample_factor)  # downsample_factor=1
 
                     for i in range(len(self.train_dataset)):
                         self.optimizers_q_list[i].zero_grad()
@@ -434,8 +460,6 @@ class GaussianPointTrainerBundleAdjustment:
                     with torch.no_grad():
                         # Save for plotting
                         epsilon = 0.0001
-                        # delta_numpy_array = self.delta_list[index].clone(
-                        # ).detach().cpu().numpy()
                         delta_numpy_array = delta_tensor.clone(
                         ).detach().cpu().numpy()
                         initial_rotation = sym.Rot3(
@@ -450,23 +474,28 @@ class GaussianPointTrainerBundleAdjustment:
                         # Compute angle error in radians
                         q_pointcloud_camera_gt_inverse = q_pointcloud_camera_gt * \
                             np.array([-1., -1., -1., 1.])
-                        # q_difference = np.matmul(q_pointcloud_camera_gt_inverse.reshape(
-                        #     (1, 4)), current_q.reshape((4, 1)))
                         q_difference = quaternion_multiply_numpy(q_pointcloud_camera_gt_inverse.reshape(
                             (1, 4)), current_q.reshape((1, 4)),)
                         q_difference = q_difference.cpu().numpy()
                         angle_difference = np.abs(
                             2*np.arctan2(np.linalg.norm(q_difference[0, 0:3]), q_difference[0, 3]))
 
-                        # error_q = torch.linalg.vector_norm(
-                        #     current_q - q_pointcloud_camera_gt)
                         if angle_difference > np.pi:
                             angle_difference = 2*np.pi - angle_difference
                         error_q = angle_difference
                         error_t = torch.linalg.vector_norm(
                             current_t - t_pointcloud_camera_gt)
 
-                        self.errors_q[index].append(error_q)
+                        if not np.isnan(error_q):
+                            self.errors_q[index].append(error_q)
+                        else:
+                            print("Angle error_q is Nan")
+                            print(f"q_pointcloud_camera_gt: \n\t{q_pointcloud_camera_gt}, \
+                                  q_pointcloud_camera_gt_inverse: \n\t {q_pointcloud_camera_gt_inverse} \
+                                  q_difference: \n\t {q_difference}, \
+                                  current_q: {current_q}, \
+                                  angle_difference: {angle_difference}")
+                            
                         self.errors_t[index].append(error_t)
 
                     gaussian_point_cloud_rasterisation_input = GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
@@ -475,7 +504,6 @@ class GaussianPointTrainerBundleAdjustment:
                         point_object_id=self.scene.point_object_id,
                         point_invalid_mask=self.scene.point_invalid_mask,
                         camera_info=camera_info,
-                        # delta=self.delta_list[index],
                         delta=delta_tensor,
                         initial_q=initial_q[index],
                         initial_t=initial_t[index],
@@ -485,6 +513,7 @@ class GaussianPointTrainerBundleAdjustment:
                     image_pred, image_depth, pixel_valid_point_count, _ = self.rasterisation(
                         gaussian_point_cloud_rasterisation_input
                     )
+
                     # clip to [0, 1]
                     image_pred = torch.clamp(image_pred, min=0, max=1)
                     # hxwx3->3xhxw
@@ -494,38 +523,29 @@ class GaussianPointTrainerBundleAdjustment:
                         image_pred = image_pred.unsqueeze(0)
                     if len(image_gt.shape) == 3:
                         image_gt = image_gt.unsqueeze(0)
-                        
-                    # loss = torch.abs(image_pred - image_gt).mean()  # L1 loss
-                    loss = 0.8*torch.abs(image_pred - image_gt).mean()  + 0.2*(1 - ssim(image_pred, image_gt,
-                           data_range=1, size_average=True))
-                    
-                    #loss.backward(retain_graph=True)
+                    print(f"Image predicted shape:{image_pred.shape}")
+                    print(f"Image gt shape:{image_gt.shape}")
+                    loss = 0.8*torch.abs(image_pred - image_gt).mean() + 0.2*(1 - ssim(image_pred, image_gt,
+                                                                                       data_range=1, size_average=True))
+
                     loss.backward()
 
                     if (not torch.isnan(self.delta_q_list[index].grad).any()):
                         self.optimizers_q_list[index].step()
-                    # if (not torch.isnan(self.delta_t_list[index].grad).any()):
-                    #     self.optimizers_t_list[index].step()
+                    if (not torch.isnan(self.delta_t_list[index].grad).any()):
+                        self.optimizers_t_list[index].step()
                     if pose_iterations_count[index] % 10 == 0:
                         self.q_scheduler_list[index].step()
-                        # self.t_scheduler_list[index].step()
-                        
+                        self.t_scheduler_list[index].step()
+
                     # Set minimum learning rate (from BAD gaussians)
                     if get_lr(self.optimizers_q_list[index]) < 1e-5:
                         for g in self.optimizers_q_list[index].param_groups:
                             g['lr'] = 1e-5
-                            
-                    # if get_lr(self.optimizers_t_list[index]) < 1e-5:
-                    #     for g in self.optimizers_t_list[index].param_groups:
-                    #         g['lr'] = 1e-5
-                        
-                    # # Visualization and validation
-                    # if total_iteration_count % self.config.increase_ba_iterations_interval == 0 and self.iterations_pose < 5:
-                    #     if self.iterations_pose == 1:
-                    #         self.iterations_pose = 2
-                    #     else:
-                    #         self.iterations_pose = int(
-                    #             self.iterations_pose * self.iterations_pose_factor)
+
+                    if get_lr(self.optimizers_t_list[index]) < 1e-5:
+                        for g in self.optimizers_t_list[index].param_groups:
+                            g['lr'] = 1e-5
 
                     magnitude_grad_viewspace_on_image = None
                     if self.adaptive_controller.input_data is not None:
@@ -593,23 +613,6 @@ class GaussianPointTrainerBundleAdjustment:
                         if loss.item() > avg_loss * 1.5:
                             is_problematic = True
                             previous_problematic_iteration = total_iteration_count
-
-                    # if total_iteration_count % self.config.log_image_interval == 0 or is_problematic:
-                    #     # make image_depth to be 3 channels
-                    #     image_depth = self._easy_cmap(image_depth)
-                    #     pixel_valid_point_count = pixel_valid_point_count.float().unsqueeze(0).repeat(3, 1, 1) / \
-                    #         pixel_valid_point_count.max()
-                    #     image_list = [image_pred, image_gt,
-                    #                   image_depth, pixel_valid_point_count]
-
-                    #     grid = make_grid(image_list, nrow=2)
-
-                    #     if is_problematic:
-                    #         self.writer.add_image(
-                    #             "image_problematic", grid, total_iteration_count)
-                    #     else:
-                    #         self.writer.add_image(
-                    #             "image", grid, total_iteration_count)
 
                     if total_iteration_count % self.config.save_position == 0:
                         for i in range(len(self.errors_q)):
@@ -714,9 +717,12 @@ class GaussianPointTrainerBundleAdjustment:
                 (camera_info_original.camera_height, camera_info_original.camera_width), -1.0, device="cuda")
             if lidar_pcd is not None:
                 lidar_measurement = Lidar(
-                    lidar_pcd.cuda(), t_lidar_camera.cuda())
+                    lidar_pcd.cuda(), t_lidar_camera.cuda()) 
+                # DEBUG =================================================================
+                # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(lidar_measurement.point_cloud)
+                # ===================================================
                 visible_points = lidar_measurement.lidar_points_visible(
-                    lidar_measurement.point_cloud,
+                    lidar_measurement.point_cloud, # lidar_pointcloud_colmap,
                     T_pointcloud_camera,
                     camera_info_original.camera_intrinsics,
                     (camera_info_original.camera_width, camera_info_original.camera_height))
@@ -731,15 +737,15 @@ class GaussianPointTrainerBundleAdjustment:
 
             # Bundle adjustment
             depth_map_original = depth_map
-            # self.iterations_bundle_adjustment = self.iterations_pose
-            self.iterations_bundle_adjustment = 1
 
-            if total_iteration_count > increase_pose_iterations_from:
-                self.iterations_bundle_adjustment = 30
+            self.iterations_bundle_adjustment = 1  
+
+            # if total_iteration_count > increase_pose_iterations_from:
+            #     self.iterations_bundle_adjustment = 60
 
             error_q = 0.
             error_t = 0.
-            
+
             for iteration in range(self.iterations_bundle_adjustment):
                 image_gt = image_gt_original
                 camera_info = camera_info_original
@@ -783,18 +789,14 @@ class GaussianPointTrainerBundleAdjustment:
 
                     q_pointcloud_camera_gt_inverse = q_pointcloud_camera_gt * \
                         np.array([-1., -1., -1., 1.])
-                    # q_difference = np.matmul(
-                    #     q_pointcloud_camera_gt_inverse.reshape((4, 1)), current_q.reshape((4, 1)))
                     q_difference = quaternion_multiply_numpy(q_pointcloud_camera_gt_inverse.reshape(
                         (1, 4)), current_q.reshape((1, 4)))
                     q_difference = q_difference.cpu().numpy()
                     angle_difference = np.abs(
                         2*np.arctan2(np.linalg.norm(q_difference[0, 0:3]), q_difference[0, 3]))
 
-                    # error_q = torch.linalg.vector_norm(
-                    #     current_q - q_pointcloud_camera_gt)
                     if angle_difference > np.pi:
-                            angle_difference = 2*np.pi - angle_difference
+                        angle_difference = 2*np.pi - angle_difference
                     error_q = angle_difference
                     error_t = torch.linalg.vector_norm(
                         current_t - t_pointcloud_camera_gt)
@@ -807,7 +809,6 @@ class GaussianPointTrainerBundleAdjustment:
                     point_object_id=self.scene.point_object_id,
                     point_invalid_mask=self.scene.point_invalid_mask,
                     camera_info=camera_info,
-                    # delta=self.delta_list[index],
                     delta=delta_tensor,
                     initial_q=initial_q[index],
                     initial_t=initial_t[index],
@@ -826,6 +827,24 @@ class GaussianPointTrainerBundleAdjustment:
                 # hxwx3->3xhxw
                 image_pred = image_pred.permute(2, 0, 1)
 
+                # SAVE DEBUG  ===============================================
+                if index == 10:
+                    ground_truth_image_downsampled_numpy = image_gt.clone(
+                    ).detach().cpu().numpy()
+                    im = PIL.Image.fromarray(
+                        (ground_truth_image_downsampled_numpy.transpose(1, 2, 0)*255).astype(np.uint8))
+                    im.save(
+                        f'/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/taichi_3d_gaussian_splatting/index10/groundtruth.png')
+
+                    predicted_image_numpy = image_pred.clone(
+                    ).detach().cpu().numpy()
+                    im = PIL.Image.fromarray(
+                        (predicted_image_numpy.transpose(1, 2, 0)*255).astype(np.uint8))
+                    im.save(
+                        f'/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/taichi_3d_gaussian_splatting/index10/prediction_{count_10}.png')
+                    count_10 += 1
+                # ===========================================================
+
                 depth_mask = torch.where(depth_map >= 0, True, False)
                 depth_map = depth_map / torch.max(depth_map)
                 loss, l1_loss, ssim_loss, depth_loss, smooth_loss = self.loss_function(
@@ -837,22 +856,28 @@ class GaussianPointTrainerBundleAdjustment:
                     point_invalid_mask=self.scene.point_invalid_mask,
                     pointcloud_features=self.scene.point_cloud_features)
 
-                # loss.backward(retain_graph=True)
                 loss.backward()
                 optimizer.step()
                 position_optimizer.step()
 
+                # # BA
                 # if optimize_pose:
-                #     # if not torch.isnan(self.delta_list[index].grad).any():
-                #     #     self.optimizers_list[index].step()
-
                 #     if (not torch.isnan(self.delta_q_list[index].grad).any()):
                 #         self.optimizers_q_list[index].step()
                 #     if (not torch.isnan(self.delta_t_list[index].grad).any()):
                 #         self.optimizers_t_list[index].step()
                 #     if pose_iterations_count[index] % 10 == 0:
-                #         # self.q_scheduler_list[index].step()
+                #         self.q_scheduler_list[index].step()
                 #         self.t_scheduler_list[index].step()
+
+                # # Set minimum learning rate (from BAD gaussians)
+                # if get_lr(self.optimizers_q_list[index]) < 1e-5:
+                #     for g in self.optimizers_q_list[index].param_groups:
+                #         g['lr'] = 1e-5
+
+                # if get_lr(self.optimizers_t_list[index]) < 1e-5:
+                #     for g in self.optimizers_t_list[index].param_groups:
+                #         g['lr'] = 1e-5
 
                 recent_losses.append(loss.item())
 
@@ -1193,8 +1218,11 @@ class GaussianPointTrainerBundleAdjustment:
                 if lidar_pcd is not None:
                     lidar_measurement = Lidar(
                         lidar_pcd.cuda(), t_lidar_camera.cuda())
+                    # DEBUG =================================================================
+                    # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(lidar_measurement.point_cloud)
+                    # ===================================================
                     visible_points = lidar_measurement.lidar_points_visible(
-                        lidar_measurement.point_cloud,
+                        lidar_measurement.point_cloud, #lidar_pointcloud_colmap,
                         T_pointcloud_camera,
                         camera_info.camera_intrinsics,
                         (camera_info.camera_width, camera_info.camera_height))

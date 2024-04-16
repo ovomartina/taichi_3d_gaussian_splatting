@@ -5,6 +5,7 @@ from taichi_3d_gaussian_splatting.Camera import CameraInfo
 from taichi_3d_gaussian_splatting.GaussianPointCloudPoseRasterisation import GaussianPointCloudPoseRasterisation
 from taichi_3d_gaussian_splatting.GaussianPointCloudScene import GaussianPointCloudScene
 from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation_torch
+from taichi_3d_gaussian_splatting.Lidar import Lidar
 from pytorch_msssim import ssim
 from dataclasses import dataclass
 from typing import List, Tuple
@@ -18,6 +19,11 @@ from taichi_3d_gaussian_splatting.GaussianPointTrainer import GaussianPointCloud
 import matplotlib.pyplot as plt
 import torchvision
 import sym
+import open3d as o3d
+
+# DEBUG - allow reproducibility
+torch.manual_seed(42)
+np.random.seed(42)
 
 R_pontcloud_pointcloudstar = np.array([[-0.5614035,  0.7017544, -0.4385965],
                                        [-0.7017544, -0.1228070,  0.7017544],
@@ -143,11 +149,9 @@ class PoseEstimator():
                 count += 1
                 print(
                     f"=================Image {count-1}========================")
-                if count % 3 != 0:
+                if count % 8 != 0:
                     continue
 
-                # if count > 1:
-                #     break
                 # Load groundtruth image
                 ground_truth_image_path = view["image_path"]
                 print(f"Loading image {ground_truth_image_path}")
@@ -155,13 +159,23 @@ class PoseEstimator():
                     PIL.Image.open(ground_truth_image_path))
                 ground_truth_image = torchvision.transforms.functional.to_tensor(
                     ground_truth_image_numpy)
+                
+                # DEBUG =============================================
+                depth_image_path = view["depth_path"]
+                print(f"Loading image {depth_image_path}")
+                depth_image_path_numpy = np.array(
+                    PIL.Image.open(depth_image_path))
+                depth_image = torchvision.transforms.functional.to_tensor(
+                    depth_image_path_numpy)
+                # ===============================================
 
-                ground_truth_image, resized_camera_info, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
-                                                                                                                         None,
+                ground_truth_image, resized_camera_info, resized_depth_image = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
+                                                                                                                         depth_image,
                                                                                                                          self.camera_info,
                                                                                                                          1)
                 ground_truth_image = ground_truth_image.cuda()
-
+                resized_depth_image = resized_depth_image.cuda()
+                
                 self.camera_info = resized_camera_info
                 groundtruth_T_pointcloud_camera = torch.tensor(
                     view["T_pointcloud_camera"],
@@ -175,6 +189,8 @@ class PoseEstimator():
                     f"Ground truth q: \n\t {groundtruth_q_pointcloud_camera}")
                 print(
                     f"Ground truth t: \n\t {groundtruth_t_pointcloud_camera}")
+                
+                
                 print(
                     f"Ground truth transformation world to camera, in camera frame: \n\t {groundtruth_T_pointcloud_camera}")
                 groundtruth_q_pointcloud_camera_numpy = groundtruth_q_pointcloud_camera.cpu().numpy()
@@ -188,6 +204,22 @@ class PoseEstimator():
                 im.save(os.path.join(self.output_path,
                         f'groundtruth/groundtruth_{count-1}.png'))
 
+                # Get lidar file if available
+                lidar_path = view['lidar_path']
+                if lidar_path:
+                    lidar_pcd = o3d.io.read_point_cloud(
+                        view['lidar_path'])
+                    lidar_pcd = torch.tensor(lidar_pcd.points)
+                    T_lidar_camera = torch.tensor(
+                        view['T_camera_lidar'])
+
+                    if len(lidar_pcd) <= 0:
+                        lidar_pcd = None
+                        T_lidar_camera = None
+                        
+                lidar_measurement = Lidar(
+                    lidar_pcd.cuda(), T_lidar_camera.cuda()) 
+                
                 errors_t_current_pic = []
                 errors_q_current_pic = []
 
@@ -196,15 +228,13 @@ class PoseEstimator():
                 pose_groundtruth = sym.Pose3(
                     R=rotation_groundtruth, t=groundtruth_t_pointcloud_camera_numpy.T.astype("float"))
 
-                print(f"Pose groundtruth:\n\t{pose_groundtruth}")
 
-                # std = 0.1, First 3 elements: rotation last 3 elements: translation
                 delta_numpy_array_q = np.random.normal(0, 0.02, (3, 1))
                 delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1))
                 delta_numpy_array = np.vstack(
                     (delta_numpy_array_q, delta_numpy_array_t))
-                delta_tensor = torch.zeros(
-                    (6, 1), requires_grad=True, device="cuda")
+                # delta_tensor = torch.zeros(
+                #     (6, 1), requires_grad=True, device="cuda")
                 delta_tensor_q = torch.zeros(
                     (3, 1), requires_grad=True, device="cuda")
                 delta_tensor_t = torch.zeros(
@@ -229,31 +259,22 @@ class PoseEstimator():
                         ))
 
                 # Optimization starts
-                optimizer_delta = torch.optim.Adam(
-                    [delta_tensor], lr=0.0005, betas=(0.9, 0.999))
-                optimizer_delta_coarse = torch.optim.Adam(
-                    [delta_tensor], lr=0.001, betas=(0.9, 0.999))
                 optimizer_delta_q = torch.optim.Adam(
-                    [delta_tensor_q], lr=1e-3, betas=(0.9, 0.999))  # 0.005
+                    [delta_tensor_q], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2)  # 
                 optimizer_delta_t = torch.optim.Adam(
-                    [delta_tensor_t], lr=1e-3, betas=(0.9, 0.999))  # q is in smaller unit that t?
+                    [delta_tensor_t], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2)  #
                 scheduler = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_q, gamma=0.9947)
                 scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
-                num_coarse_epochs = 0 #200 #3000
-                num_epochs = 400  # 1000
-                downsample_factor = 4
+                num_coarse_epochs = 0 #3000
+                num_epochs = 2000  # 1000
+                downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,
                                                                                                                                                  self.camera_info,
                                                                                                                                                  downsample_factor)
-                # # DEBUG
-                # newsize = (self.config.image_width, self.config.image_height)
-                # ground_truth_image_downsampled = ground_truth_image_downsampled.resize(newsize)
-                # resized_camera_info_downsampled = resized_camera_info
-                # ##################
                 
                 # Save coarse groundtruth image
                 ground_truth_image_downsampled_numpy = ground_truth_image_downsampled.clone(
@@ -318,16 +339,27 @@ class PoseEstimator():
                         predicted_image, min=0, max=1)
                     predicted_image = predicted_image.permute(2, 0, 1)
 
-                    L1 = torch.abs(predicted_image -
-                                   ground_truth_image_downsampled).mean()
+                    if len(predicted_image.shape) == 3:
+                        predicted_image_temp = predicted_image.unsqueeze(0)
+                    if len(ground_truth_image_downsampled.shape) == 3:
+                        ground_truth_image_temp = ground_truth_image_downsampled.unsqueeze(0)
+                    L1 = 0.8*torch.abs(predicted_image - ground_truth_image_downsampled).mean()  + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
+                           data_range=1, size_average=True))
                     L1.backward()
 
-                    # if not torch.isnan(delta_tensor.grad).any():
-                    # optimizer_delta_coarse.step()
-                    if (not torch.isnan(delta_tensor_q.grad).any()):
+                    if (not torch.isnan(delta_tensor_q.grad).any()) and (not torch.isnan(delta_tensor_t.grad).any()):
                         optimizer_delta_q.step()
-                    if (not torch.isnan(delta_tensor_t.grad).any()):
                         optimizer_delta_t.step()
+                        
+                    if epoch % 5 == 0:
+                        scheduler.step()
+                        for param_group in optimizer_delta_q.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+                        scheduler_t.step()
+                        for param_group in optimizer_delta_t.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
 
                     if epoch % 50 == 0:
                         print(L1)
@@ -342,17 +374,9 @@ class PoseEstimator():
                         im.save(os.path.join(self.output_path,
                                              f'epochs_delta_{count-1}/coarse_{epoch}.png'))
 
-                    if epoch % 5 == 0:
-                        scheduler.step()
-                        for param_group in optimizer_delta_q.param_groups:
-                            if param_group['lr'] < 1e-5:
-                                param_group['lr'] = 1e-5
-                        scheduler_t.step()
-                        for param_group in optimizer_delta_t.param_groups:
-                            if param_group['lr'] < 1e-5:
-                                param_group['lr'] = 1e-5
-
                 epsilon = 0.0001
+                delta_tensor = torch.cat(
+                        (delta_tensor_q, delta_tensor_t), axis=0)
                 delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
                 current_pose = initial_pose.retract(
                     delta_numpy_array, epsilon=epsilon)
@@ -362,13 +386,14 @@ class PoseEstimator():
                 print(f"Ground truth pose:\n\t{pose_groundtruth}")
 
                 # Pose refinement
-                for epoch in range(num_epochs):
+                for epoch in range(num_epochs):      
                     # Add error to plot
                     with torch.no_grad():
                         epsilon = 0.0001
                         delta_numpy_array = delta_tensor.clone().detach().cpu().numpy()
                         current_pose = initial_pose.retract(
                             delta_numpy_array, epsilon=epsilon)
+                        T_pointcloud_camera_current = current_pose.to_homogenous_matrix()
                         current_q, current_t = extract_q_t_from_pose(
                             current_pose)
                         current_t_numpy_array = current_t.clone().detach().cpu().numpy()
@@ -393,7 +418,33 @@ class PoseEstimator():
                     optimizer_delta_q.zero_grad()
                     optimizer_delta_t.zero_grad()
 
-                    predicted_image, _, _, _ = self.rasteriser(
+                    # Get current depth map
+                    groundtruth_T_pointcloud_camera = torch.tensor(groundtruth_T_pointcloud_camera)
+                    visible_points = lidar_measurement.lidar_points_visible(
+                    lidar_measurement.point_cloud,
+                    groundtruth_T_pointcloud_camera.squeeze(0),
+                    resized_camera_info.camera_intrinsics,
+                    (resized_camera_info.camera_width, resized_camera_info.camera_height))
+                    
+                    depth_map = torch.full(
+                    (resized_camera_info.camera_height, resized_camera_info.camera_width), -1.0, device="cuda")
+                    
+                    depth_map = lidar_measurement.lidar_points_to_camera(
+                        visible_points,
+                        groundtruth_T_pointcloud_camera,
+                        resized_camera_info.camera_intrinsics,
+                        (resized_camera_info.camera_width,
+                            resized_camera_info.camera_height)
+                    )
+                    
+                    # DEBUG =======================
+                    depth_map = resized_depth_image
+                    # =============================
+                    
+                    depth_mask = torch.where(depth_map >= 0, True, False)
+                    depth_map = depth_map / torch.max(depth_map)
+                    
+                    predicted_image, predicted_depth, _, _ = self.rasteriser(
                         GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
                             point_cloud=self.scene.point_cloud,
                             point_cloud_features=self.scene.point_cloud_features,
@@ -412,15 +463,27 @@ class PoseEstimator():
                     predicted_image = torch.clamp(
                         predicted_image, min=0, max=1)
                     predicted_image = predicted_image.permute(2, 0, 1)
-
+                    
+                    predicted_depth = predicted_depth.cuda()
+                    predicted_depth = predicted_depth/torch.max(predicted_depth)
+                    
                     if len(predicted_image.shape) == 3:
                         predicted_image_temp = predicted_image.unsqueeze(0)
                     if len(ground_truth_image.shape) == 3:
                         ground_truth_image_temp = ground_truth_image.unsqueeze(0)
-                    L1 = torch.abs(predicted_image - ground_truth_image).mean()
-                    # L1 = 0.8*torch.abs(predicted_image - ground_truth_image).mean()  + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
-                    #        data_range=1, size_average=True))
-                    L1.backward()
+
+                    L1 = 0.8*torch.abs(predicted_image - ground_truth_image).mean()  + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
+                           data_range=1, size_average=True))
+                    masked_difference = torch.abs(predicted_depth - depth_map) #[depth_mask]
+                    L_DEPTH = masked_difference.mean()
+                    if len(masked_difference) == 0:
+                        L_DEPTH = torch.tensor(0) 
+                      
+                    # DEBUG
+                    # L = L1 + 0.1 * L_DEPTH
+                    L = L_DEPTH
+                    
+                    L.backward()
 
                     if (not torch.isnan(delta_tensor_q.grad).any()) and (not torch.isnan(delta_tensor_t.grad).any()):
                         optimizer_delta_q.step()
@@ -440,8 +503,8 @@ class PoseEstimator():
                         with torch.no_grad():
                             print(
                                 f"============== epoch {epoch} ==========================")
-                            print(f"loss:{L1}")
-
+                            print(f"loss:{L}")
+                            
                             image_np = predicted_image.cpu().detach().numpy()
 
                             epsilon = 0.0001
@@ -453,6 +516,8 @@ class PoseEstimator():
                             print(f"Initial pose:\n\t{initial_pose}")
                             print(f"Current pose:\n\t{current_pose}")
                             print(f"Ground truth pose:\n\t{pose_groundtruth}")
+                            print(f"T_pointcloud_camera_current: ",T_pointcloud_camera_current)
+                            print(f"T_pointcloud_camera_groundtruth: ", groundtruth_T_pointcloud_camera)
 
                             im = PIL.Image.fromarray(
                                 (image_np.transpose(1, 2, 0)*255).astype(np.uint8))

@@ -1,0 +1,4853 @@
+[
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000000.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9762378381,
+                -0.1327458453,
+                0.1712840449,
+                -1.5547990965
+            ],
+            [
+                0.094068911,
+                0.9716536811,
+                0.2168874452,
+                -0.3324306452
+            ],
+            [
+                -0.19521968,
+                -0.1956212271,
+                0.9610523462,
+                -4.0681291567
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000000.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_1_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000008.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9766618128,
+                -0.1291613229,
+                0.171607273,
+                -1.346434345
+            ],
+            [
+                0.0923564191,
+                0.9738909091,
+                0.2073807825,
+                -0.2211222829
+            ],
+            [
+                -0.1939123394,
+                -0.1866918578,
+                0.963090938,
+                -4.0757059851
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000008.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_9_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000016.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9792712492,
+                -0.1160213385,
+                0.1660327364,
+                -0.8251741257
+            ],
+            [
+                0.0854694354,
+                0.9798373787,
+                0.1805925991,
+                0.056823056
+            ],
+            [
+                -0.1836376763,
+                -0.1626584159,
+                0.9694428522,
+                -4.0948216163
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000016.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_17_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000024.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9854003916,
+                -0.0907459243,
+                0.1440529257,
+                -0.1425636651
+            ],
+            [
+                0.0708800555,
+                0.9879614976,
+                0.1375067163,
+                0.4255714156
+            ],
+            [
+                -0.1547969183,
+                -0.1252886927,
+                0.9799697228,
+                -4.1184517931
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000024.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_25_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000032.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9942209142,
+                -0.0548145982,
+                0.0923045702,
+                0.5509466862
+            ],
+            [
+                0.0472123988,
+                0.9954620802,
+                0.0826210407,
+                0.7967854124
+            ],
+            [
+                -0.0964145386,
+                -0.0777856465,
+                0.992297148,
+                -4.142797865
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000032.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_33_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000040.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9999300811,
+                -0.0117123456,
+                -0.0016290879,
+                1.1008912214
+            ],
+            [
+                0.0117395661,
+                0.9997718325,
+                0.0178456024,
+                1.094233418
+            ],
+            [
+                0.0014197023,
+                -0.0178634794,
+                0.9998394274,
+                -4.1623831746
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000040.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_41_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000048.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9882697849,
+                0.0303007999,
+                -0.1496819752,
+                1.3565077468
+            ],
+            [
+                -0.0379045948,
+                0.9981177371,
+                -0.0482102125,
+                1.2306045507
+            ],
+            [
+                0.1479394263,
+                0.053318331,
+                0.9875581409,
+                -4.1718992586
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000048.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_49_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000056.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9293535784,
+                0.0598174507,
+                -0.3643127762,
+                1.3904461054
+            ],
+            [
+                -0.1051920994,
+                0.9887873929,
+                -0.1059911028,
+                1.1443469622
+            ],
+            [
+                0.3538877627,
+                0.1368260365,
+                0.9252254251,
+                -3.8470463174
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000056.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_57_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000064.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7866454714,
+                0.0595347117,
+                -0.6145278842,
+                1.4800510026
+            ],
+            [
+                -0.1833449319,
+                0.9729656657,
+                -0.1404366379,
+                0.8745957331
+            ],
+            [
+                0.5895536772,
+                0.2231444183,
+                0.7762944224,
+                -2.8565017855
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000064.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_65_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000072.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.5618922533,
+                0.0235540651,
+                -0.8268750218,
+                1.59912343
+            ],
+            [
+                -0.2543761273,
+                0.9560787532,
+                -0.1456234993,
+                0.5048261367
+            ],
+            [
+                0.7871276145,
+                0.2921619819,
+                0.5432048369,
+                -1.4912905634
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000072.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_73_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000080.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.3032269895,
+                -0.03177688,
+                -0.9523883781,
+                1.7170124581
+            ],
+            [
+                -0.3040863542,
+                0.9439636493,
+                -0.1283125794,
+                0.1122949736
+            ],
+            [
+                0.9030973823,
+                0.3285161469,
+                0.27657234,
+                -0.0477325917
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000080.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_81_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000088.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.0817534366,
+                -0.082165489,
+                -0.9932598895,
+                1.7997040261
+            ],
+            [
+                -0.3291627984,
+                0.9384480371,
+                -0.1047240838,
+                -0.2188240029
+            ],
+            [
+                0.9407274992,
+                0.3355057585,
+                0.0496755298,
+                1.1734490703
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000088.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_89_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000096.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0409355524,
+                -0.1086332183,
+                -0.9932386946,
+                1.8179031095
+            ],
+            [
+                -0.3377633168,
+                0.9370548142,
+                -0.0885675847,
+                -0.4130392454
+            ],
+            [
+                0.9403404822,
+                0.3318540328,
+                -0.0750511725,
+                1.8716821245
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000096.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_97_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000104.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0290406619,
+                -0.1098397026,
+                -0.9935249769,
+                1.7606938983
+            ],
+            [
+                -0.3373993908,
+                0.936687311,
+                -0.0936938237,
+                -0.4241147486
+            ],
+            [
+                0.9409135407,
+                0.3324937913,
+                -0.0642618682,
+                1.9180615861
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000104.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_105_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000112.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.0907162821,
+                -0.0986230426,
+                -0.9909813579,
+                1.7069523652
+            ],
+            [
+                -0.3316200458,
+                0.9353026055,
+                -0.1234389783,
+                -0.4033197393
+            ],
+            [
+                0.9390413736,
+                0.3398272085,
+                0.0521417971,
+                1.8136869314
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000112.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_113_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000120.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.2942499235,
+                -0.0782099458,
+                -0.9525230637,
+                1.629616518
+            ],
+            [
+                -0.313096618,
+                0.9337593026,
+                -0.1733899436,
+                -0.3636098654
+            ],
+            [
+                0.9029880898,
+                0.3492517274,
+                0.2502713339,
+                1.6480843658
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000120.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_121_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000128.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.5436710323,
+                -0.0495234955,
+                -0.8378360413,
+                1.5066341118
+            ],
+            [
+                -0.2729868251,
+                0.9335442522,
+                -0.2323215928,
+                -0.321616652
+            ],
+            [
+                0.793662398,
+                0.3550247211,
+                0.4940217055,
+                1.4687115107
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000128.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_129_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000136.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7829842867,
+                -0.0151035558,
+                -0.6218580942,
+                1.3156463209
+            ],
+            [
+                -0.2079525989,
+                0.9358308848,
+                -0.2845632999,
+                -0.2898698426
+            ],
+            [
+                0.5862519282,
+                0.3521255993,
+                0.7296000542,
+                1.3172592726
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000136.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_137_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000144.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9496486175,
+                0.0200559574,
+                -0.3126743704,
+                1.0286547136
+            ],
+            [
+                -0.1235077026,
+                0.9411049277,
+                -0.3147496821,
+                -0.2820395661
+            ],
+            [
+                0.2879467845,
+                0.3375192937,
+                0.8961960587,
+                1.2436388462
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000144.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_145_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000152.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9978829098,
+                0.046627998,
+                0.0453379319,
+                0.5966491751
+            ],
+            [
+                -0.0301686776,
+                0.9494520848,
+                -0.3124589407,
+                -0.3040572029
+            ],
+            [
+                -0.0576155288,
+                0.3104296515,
+                0.9488487141,
+                1.3068311309
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000152.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_153_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000160.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9162097265,
+                0.06157685,
+                0.3959394255,
+                -0.2360561564
+            ],
+            [
+                0.0556944465,
+                0.9589604503,
+                -0.2780161568,
+                -0.2898287671
+            ],
+            [
+                -0.3968096089,
+                0.2767727341,
+                0.8751794033,
+                1.6643905027
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000160.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_161_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000168.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7174511519,
+                0.0618767713,
+                0.6938552514,
+                -1.3631556957
+            ],
+            [
+                0.1235505396,
+                0.9689530766,
+                -0.2141616202,
+                -0.2419632059
+            ],
+            [
+                -0.6855648101,
+                0.2393766919,
+                0.6875315924,
+                2.2457960611
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000168.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_169_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000176.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.4283419837,
+                0.0511496442,
+                0.9021678662,
+                -2.5804657878
+            ],
+            [
+                0.1632838132,
+                0.9775798748,
+                -0.1329510613,
+                -0.1701410073
+            ],
+            [
+                -0.8887415492,
+                0.2042579307,
+                0.4103865939,
+                2.923829112
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000176.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_177_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000184.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.0888028229,
+                0.0267880056,
+                0.9956889381,
+                -3.679245946
+            ],
+            [
+                0.1719660949,
+                0.984214937,
+                -0.0418165034,
+                -0.1030039269
+            ],
+            [
+                -0.9810921062,
+                0.1749381619,
+                0.082794436,
+                3.5620284707
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000184.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_185_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000192.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.2576162842,
+                -0.0062458915,
+                0.9662271156,
+                -4.4522912715
+            ],
+            [
+                0.1493547222,
+                0.9877034934,
+                0.0462058005,
+                -0.0562749096
+            ],
+            [
+                -0.954634494,
+                0.1562139491,
+                -0.2535156505,
+                4.0233826445
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000192.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_193_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000200.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.5679228054,
+                -0.0417616522,
+                0.8220216855,
+                -4.6978561597
+            ],
+            [
+                0.098065537,
+                0.9881649233,
+                0.1179543757,
+                -0.0341204868
+            ],
+            [
+                -0.8172189655,
+                0.147600978,
+                -0.5571060166,
+                4.1709515953
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000200.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_201_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000208.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.8055222445,
+                -0.0781937985,
+                0.5873837276,
+                -4.4925864707
+            ],
+            [
+                0.0281354045,
+                0.9850903559,
+                0.1697215062,
+                -0.1148193256
+            ],
+            [
+                -0.5918972146,
+                0.1532407274,
+                -0.7913121804,
+                4.0523223777
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000208.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_209_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000216.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9452516884,
+                -0.1079531215,
+                0.3079697537,
+                -4.0134875111
+            ],
+            [
+                -0.0489327681,
+                0.9799181494,
+                0.1933028834,
+                -0.2715809293
+            ],
+            [
+                -0.3226528008,
+                0.1676500644,
+                -0.9315517302,
+                3.7816127743
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000216.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_217_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000224.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9909197516,
+                -0.1286460154,
+                0.0390928217,
+                -3.3466471737
+            ],
+            [
+                -0.1188068056,
+                0.9739006915,
+                0.1933969647,
+                -0.4601662669
+            ],
+            [
+                -0.062952275,
+                0.186996379,
+                -0.9803414534,
+                3.4020492229
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000224.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_225_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000232.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9735436944,
+                -0.1402437196,
+                -0.1804005939,
+                -2.5569529992
+            ],
+            [
+                -0.1728577285,
+                0.9683521952,
+                0.1800395283,
+                -0.6297741436
+            ],
+            [
+                0.149441898,
+                0.2064599844,
+                -0.9669753844,
+                2.9628571145
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000232.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_233_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000240.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9347189775,
+                -0.1451461013,
+                -0.3243964277,
+                -1.7269851616
+            ],
+            [
+                -0.2069847985,
+                0.9643422639,
+                0.1649281397,
+                -0.7263506967
+            ],
+            [
+                0.288890509,
+                0.2213065914,
+                -0.9314320514,
+                2.5041934154
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000240.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_241_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000248.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.912397572,
+                -0.1469444902,
+                -0.3820183077,
+                -0.9350208216
+            ],
+            [
+                -0.2207422958,
+                0.9626234191,
+                0.156936267,
+                -0.6935514362
+            ],
+            [
+                0.3446788498,
+                0.2275158672,
+                -0.9107321344,
+                2.0713896586
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000248.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_249_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000256.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9117924382,
+                -0.1483786033,
+                -0.3829077432,
+                -0.2388655949
+            ],
+            [
+                -0.2221437846,
+                0.9624495945,
+                0.1560221685,
+                -0.5586309781
+            ],
+            [
+                0.3453790507,
+                0.2273204086,
+                -0.9105156468,
+                1.687029562
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000256.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_257_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000264.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9109999777,
+                -0.1492133488,
+                -0.3844664058,
+                0.3623727177
+            ],
+            [
+                -0.2223598733,
+                0.9628533829,
+                0.1531974211,
+                -0.4226050591
+            ],
+            [
+                0.3473256792,
+                0.2250527485,
+                -0.9103384716,
+                1.3275911017
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000264.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_265_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000272.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9107281204,
+                -0.1494318761,
+                -0.3850252007,
+                0.8565058183
+            ],
+            [
+                -0.2227133362,
+                0.9627815285,
+                0.1531355554,
+                -0.3113589098
+            ],
+            [
+                0.3478118178,
+                0.2252151035,
+                -0.9101126834,
+                0.9928433331
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000272.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_273_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000280.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9108634809,
+                -0.1495651683,
+                -0.3846530639,
+                1.2578165861
+            ],
+            [
+                -0.223147044,
+                0.9625179024,
+                0.154157985,
+                -0.2156996111
+            ],
+            [
+                0.3471787952,
+                0.226251073,
+                -0.9100974322,
+                0.6886650592
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000280.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_281_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000288.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9109381656,
+                -0.149410393,
+                -0.3845363351,
+                1.5813334729
+            ],
+            [
+                -0.2226657843,
+                0.96274956,
+                0.1534054538,
+                -0.1275938689
+            ],
+            [
+                0.3472918182,
+                0.2253659673,
+                -0.9102739004,
+                0.413246428
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000288.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_289_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000296.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9108719607,
+                -0.1494132266,
+                -0.3846920314,
+                1.8332650352
+            ],
+            [
+                -0.2229411634,
+                0.9625889162,
+                0.154012389,
+                -0.0540404195
+            ],
+            [
+                0.3472887976,
+                0.2260492558,
+                -0.910105612,
+                0.1691243833
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000296.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_297_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000304.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.911119477,
+                -0.1490756702,
+                -0.384236572,
+                2.0218970376
+            ],
+            [
+                -0.2225059747,
+                0.9626724024,
+                0.1541198783,
+                0.0102605537
+            ],
+            [
+                0.3469184197,
+                0.2259165559,
+                -0.9102798031,
+                -0.0435300304
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000304.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_305_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000312.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9111805423,
+                -0.1490594974,
+                -0.3840980156,
+                2.1571772973
+            ],
+            [
+                -0.2225585762,
+                0.9626156438,
+                0.1543981946,
+                0.0628951089
+            ],
+            [
+                0.3467242413,
+                0.2261689381,
+                -0.9102911138,
+                -0.2244898977
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000312.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_313_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000320.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9108697039,
+                -0.1498417233,
+                -0.3845306757,
+                2.2505389773
+            ],
+            [
+                -0.2228764496,
+                0.9628024,
+                0.1527665763,
+                0.1129385726
+            ],
+            [
+                0.3473362503,
+                0.2248532779,
+                -0.9103837282,
+                -0.3747196481
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000320.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_321_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000328.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9116117983,
+                -0.1490994439,
+                -0.383057809,
+                2.3004208978
+            ],
+            [
+                -0.222051357,
+                0.9628493406,
+                0.1536695879,
+                0.1403462957
+            ],
+            [
+                0.3459149087,
+                0.2251455157,
+                -0.9108525527,
+                -0.4827642563
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000328.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_329_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000336.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9114384104,
+                -0.1492446365,
+                -0.3834136963,
+                2.3301782997
+            ],
+            [
+                -0.222851603,
+                0.9624306249,
+                0.1551272231,
+                0.1573737244
+            ],
+            [
+                0.3458571773,
+                0.2268332664,
+                -0.9104556454,
+                -0.5602449239
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000336.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_337_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000344.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.9112488424,
+                -0.1497474186,
+                -0.3836681612,
+                2.3413167088
+            ],
+            [
+                -0.2231512287,
+                0.9624873629,
+                0.154342494,
+                0.1716241042
+            ],
+            [
+                0.3461633666,
+                0.2262604405,
+                -0.9104818157,
+                -0.6040803665
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000344.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_345_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000352.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.8870547111,
+                -0.1504550592,
+                -0.4364598661,
+                2.3416931003
+            ],
+            [
+                -0.2343749868,
+                0.9612759146,
+                0.1449723478,
+                0.1766661759
+            ],
+            [
+                0.3977465338,
+                0.2308936795,
+                -0.8879672312,
+                -0.6098288015
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000352.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_353_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000360.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.4968967047,
+                -0.1406427574,
+                -0.8563371297,
+                2.3464613404
+            ],
+            [
+                -0.3222529082,
+                0.9461260355,
+                0.0316004443,
+                0.1641696881
+            ],
+            [
+                0.8057584799,
+                0.2916592871,
+                -0.5154494469,
+                -0.6392076307
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000360.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_361_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000368.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.2862905013,
+                -0.0786254841,
+                -0.9549114001,
+                2.3410160586
+            ],
+            [
+                -0.3142033359,
+                0.9338119796,
+                -0.1710890136,
+                0.1630960081
+            ],
+            [
+                0.9051596614,
+                0.3490175068,
+                0.2426371104,
+                -0.6347203929
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000368.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_369_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000376.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7619522461,
+                -0.018227959,
+                -0.6473766417,
+                2.3401525601
+            ],
+            [
+                -0.2154618301,
+                0.9355275136,
+                -0.2799365484,
+                0.165114057
+            ],
+            [
+                0.6107413319,
+                0.3527832378,
+                0.7088998608,
+                -0.6327921279
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000376.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_377_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000384.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7983769057,
+                -0.0121141684,
+                -0.6020361812,
+                1.8297840864
+            ],
+            [
+                -0.2026978922,
+                0.9360436592,
+                -0.287638371,
+                0.2743051758
+            ],
+            [
+                0.5670166496,
+                0.3516752976,
+                0.7448601238,
+                -1.1356513627
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000384.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_385_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000392.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7984234579,
+                -0.0122552611,
+                -0.6019715861,
+                -0.006203219
+            ],
+            [
+                -0.2024331728,
+                0.9361265936,
+                -0.287554884,
+                0.6640819382
+            ],
+            [
+                0.5670456705,
+                0.3514495829,
+                0.7449445605,
+                -2.9378452805
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000392.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_393_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000400.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.8029143272,
+                -0.012477459,
+                -0.595963838,
+                -0.9255361537
+            ],
+            [
+                -0.2000442672,
+                0.9361610392,
+                -0.2891103591,
+                0.8612122908
+            ],
+            [
+                0.5615254885,
+                0.3513499987,
+                0.7491610669,
+                -3.8415611549
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000400.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_401_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000408.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.9877610499,
+                0.0337591515,
+                -0.1522774705,
+                -0.9275552539
+            ],
+            [
+                -0.0812342658,
+                0.9447789175,
+                -0.3174803792,
+                0.8605726871
+            ],
+            [
+                0.1331506755,
+                0.3259649012,
+                0.9359582153,
+                -3.8418363397
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000408.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_409_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000416.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.7464136044,
+                0.0642816285,
+                0.6623704428,
+                -0.9243326167
+            ],
+            [
+                0.1151146946,
+                0.9678481498,
+                -0.2236483088,
+                0.8620620774
+            ],
+            [
+                -0.655450485,
+                0.2431827115,
+                0.7150152659,
+                -3.8402501886
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000416.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_417_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000424.jpg",
+        "T_pointcloud_camera": [
+            [
+                0.096569927,
+                0.0285147839,
+                0.9949176631,
+                -0.9250518515
+            ],
+            [
+                0.1714545962,
+                0.9841706736,
+                -0.0448487081,
+                0.8610139495
+            ],
+            [
+                -0.9804476379,
+                0.1749142427,
+                0.0901522994,
+                -3.8419835403
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000424.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_425_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000432.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0715334685,
+                0.0142776881,
+                0.9973360068,
+                -0.9429305267
+            ],
+            [
+                0.1644134395,
+                0.9863887667,
+                -0.0023284906,
+                0.8487988369
+            ],
+            [
+                -0.9837942792,
+                0.1638088782,
+                -0.0729072536,
+                -3.7987678986
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000432.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_433_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000440.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0727754643,
+                0.0143825392,
+                0.9972446412,
+                -1.154021651
+            ],
+            [
+                0.1649353828,
+                0.9863019471,
+                -0.0021883069,
+                0.7047207011
+            ],
+            [
+                -0.9836158047,
+                0.1643216716,
+                -0.0741507718,
+                -3.2741348815
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000440.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_441_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000448.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0711137966,
+                0.0144462911,
+                0.997363591,
+                -1.551005633
+            ],
+            [
+                0.1652244282,
+                0.9862528152,
+                -0.0025045619,
+                0.4319828124
+            ],
+            [
+                -0.983688831,
+                0.1646107202,
+                -0.0725230623,
+                -2.3036970142
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000448.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_449_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000456.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0718887517,
+                0.0146661892,
+                0.9973048232,
+                -2.0713439412
+            ],
+            [
+                0.1655427809,
+                0.9861992611,
+                -0.0025700478,
+                0.0740584512
+            ],
+            [
+                -0.9835789725,
+                0.1649118563,
+                -0.0733245155,
+                -1.0198351139
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000456.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_457_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000464.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0712363224,
+                0.0133497495,
+                0.9973701272,
+                -2.6550605463
+            ],
+            [
+                0.1651888999,
+                0.9862609493,
+                -0.0014025755,
+                -0.3313547991
+            ],
+            [
+                -0.9836859325,
+                0.1646545598,
+                -0.0724628334,
+                0.409976747
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000464.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_465_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000472.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0707865275,
+                0.0150373403,
+                0.9973781359,
+                -3.2445305167
+            ],
+            [
+                0.1658661406,
+                0.9861434166,
+                -0.0030960033,
+                -0.7271925332
+            ],
+            [
+                -0.9836044382,
+                0.1652121068,
+                -0.0722998537,
+                1.8425967827
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000472.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_473_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000480.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0712763013,
+                0.0144441095,
+                0.9973520224,
+                -3.770148211
+            ],
+            [
+                0.1659113862,
+                0.9861376844,
+                -0.0024247515,
+                -1.0906375147
+            ],
+            [
+                -0.9835614372,
+                0.1652992292,
+                -0.072684689,
+                3.1253558439
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000480.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_481_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000488.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0707425777,
+                0.0141684637,
+                0.9973939755,
+                -4.1691904653
+            ],
+            [
+                0.1656249996,
+                0.9861862113,
+                -0.0022618987,
+                -1.3643245181
+            ],
+            [
+                -0.9836482335,
+                0.1650333643,
+                -0.0721120065,
+                4.0990184052
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000488.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_489_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    },
+    {
+        "image_path": "/media/scratch1/mroncoroni/colmap_projects/replica/room_1_high_quality_500_frames/images/frame000496.jpg",
+        "T_pointcloud_camera": [
+            [
+                -0.0711387141,
+                0.0141043722,
+                0.9973667079,
+                -4.3819959092
+            ],
+            [
+                0.1656881882,
+                0.9861758947,
+                -0.0021281513,
+                -1.5127230269
+            ],
+            [
+                -0.9836090217,
+                0.1651004889,
+                -0.0724922129,
+                4.6202284883
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_intrinsics": [
+            [
+                400.1979473198,
+                0.0,
+                360.0
+            ],
+            [
+                0.0,
+                400.2077112856,
+                202.5
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "camera_height": 405,
+        "camera_width": 720,
+        "camera_id": 1,
+        "depth_path": "/media/scratch1/mroncoroni/depth/depth000496.png",
+        "lidar_path": "/media/scratch1/mroncoroni/groundtruth/replica/room_1/laser_scan/laser_scan_frame_497_noise.ply",
+        "T_camera_lidar": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ]
+        ]
+    }
+]

@@ -17,10 +17,11 @@ import numpy as np
 
 mat4x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
 mat3x0f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
+mat1x3f = ti.types.matrix(n=1, m=3, dtype=ti.f32)
 mat1x4f = ti.types.matrix(n=1, m=4, dtype=ti.f32)
 mat2x3f = ti.types.matrix(n=2, m=3, dtype=ti.f32)
-mat3x3f = ti.types.matrix(n=2, m=3, dtype=ti.f32)
 mat2x4f = ti.types.matrix(n=2, m=4, dtype=ti.f32)
+mat3x1f = ti.types.matrix(n=3, m=1, dtype=ti.f32)
 mat3x3f = ti.types.matrix(n=3, m=3, dtype=ti.f32)
 mat3x4f = ti.types.matrix(n=3, m=4, dtype=ti.f32)
 
@@ -39,6 +40,8 @@ def gaussian_point_rasterisation_backward_with_pose(
     t_pointcloud_camera: ti.types.ndarray(ti.f32, ndim=2),  # (1, 3)
     grad_q: ti.types.ndarray(ti.f32, ndim=1),  # (4)
     grad_t: ti.types.ndarray(ti.f32, ndim=1),  # (3)
+    grad_q_depth: ti.types.ndarray(ti.f32, ndim=1),  # (4)
+    grad_t_depth: ti.types.ndarray(ti.f32, ndim=1),  # (3)
     # (tiles_per_row * tiles_per_col)
     tile_points_start: ti.types.ndarray(ti.i32, ndim=1),
     tile_points_end: ti.types.ndarray(ti.i32, ndim=1),
@@ -327,61 +330,31 @@ def gaussian_point_rasterisation_backward_with_pose(
         w_t_w_point = gaussian_point_3d.translation
         R_guess = rotation_matrix_from_quaternion(q_pointcloud_camera_taichi)
 
-        # d_uv_d_translation_camera = d_uv_d_translation 
+        # d_uv_d_translation_camera = d_uv_d_translation
         d_uv_d_translation_camera = project_to_camera_relative_position_jacobian(
             w_t_w_point, T_camera_pointcloud_mat, camera_intrinsics_mat)
         dR_dqx, dR_dqy, dR_dqz, dR_dqw = quaternion_to_rotation_matrix_torch_jacobian(
             (q_pointcloud_camera[0, 0], q_pointcloud_camera[0, 1], q_pointcloud_camera[0, 2], q_pointcloud_camera[0, 3]))
-        
+
         # x, y, z: coordinate of points in camera frame
-        c_t_c_point = R_guess.transpose() @ w_t_w_point
-
-        dx_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,0] + w_t_w_point[1]* dR_dqx[1,0] + w_t_w_point[2]* dR_dqx[2,0] - t_pointcloud_camera[0, 0]* dR_dqx[0,0] - t_pointcloud_camera[0, 1] * dR_dqx[1,0] - t_pointcloud_camera[0,2] * dR_dqx[2,0]],
-                         [w_t_w_point[0]* dR_dqy[0,0] + w_t_w_point[1]* dR_dqy[1,0] + w_t_w_point[2]* dR_dqy[2,0] - t_pointcloud_camera[0, 0]* dR_dqy[0,0] - t_pointcloud_camera[0, 1] * dR_dqy[1,0] - t_pointcloud_camera[0,2] * dR_dqy[2,0]],
-                         [w_t_w_point[0]* dR_dqz[0,0] + w_t_w_point[1]* dR_dqz[1,0] + w_t_w_point[2]* dR_dqz[2,0] - t_pointcloud_camera[0, 0]* dR_dqz[0,0] - t_pointcloud_camera[0, 1] * dR_dqz[1,0] - t_pointcloud_camera[0,2] * dR_dqz[2,0]],
-                         [w_t_w_point[0]* dR_dqw[0,0] + w_t_w_point[1]* dR_dqw[1,0] + w_t_w_point[2]* dR_dqw[2,0] - t_pointcloud_camera[0, 0]* dR_dqw[0,0] - t_pointcloud_camera[0, 1] * dR_dqw[1,0] - t_pointcloud_camera[0,2] * dR_dqw[2,0]]])
-        dy_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,1] + w_t_w_point[1]* dR_dqx[1,1] + w_t_w_point[2]* dR_dqx[2,1] - t_pointcloud_camera[0, 0]* dR_dqx[0,1] - t_pointcloud_camera[0, 1] * dR_dqx[1,1] - t_pointcloud_camera[0,2] * dR_dqx[2,1]],
-                         [w_t_w_point[0]* dR_dqy[0,1] + w_t_w_point[1]* dR_dqy[1,1] + w_t_w_point[2]* dR_dqy[2,1] - t_pointcloud_camera[0, 0]* dR_dqy[0,1] - t_pointcloud_camera[0, 1] * dR_dqy[1,1] - t_pointcloud_camera[0,2] * dR_dqy[2,1]],
-                         [w_t_w_point[0]* dR_dqz[0,1] + w_t_w_point[1]* dR_dqz[1,1] + w_t_w_point[2]* dR_dqz[2,1] - t_pointcloud_camera[0, 0]* dR_dqz[0,1] - t_pointcloud_camera[0, 1] * dR_dqz[1,1] - t_pointcloud_camera[0,2] * dR_dqz[2,1]],
-                         [w_t_w_point[0]* dR_dqw[0,1] + w_t_w_point[1]* dR_dqw[1,1] + w_t_w_point[2]* dR_dqw[2,1] - t_pointcloud_camera[0, 0]* dR_dqw[0,1] - t_pointcloud_camera[0, 1] * dR_dqw[1,1] - t_pointcloud_camera[0,2] * dR_dqw[2,1]]])
-        dz_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,2] + w_t_w_point[1]* dR_dqx[1,2] + w_t_w_point[2]* dR_dqx[2,2] - t_pointcloud_camera[0, 0]* dR_dqx[0,2] - t_pointcloud_camera[0, 1] * dR_dqx[1,2] - t_pointcloud_camera[0,2] * dR_dqx[2,2]],
-                         [w_t_w_point[0]* dR_dqy[0,2] + w_t_w_point[1]* dR_dqy[1,2] + w_t_w_point[2]* dR_dqy[2,2] - t_pointcloud_camera[0, 0]* dR_dqy[0,2] - t_pointcloud_camera[0, 1] * dR_dqy[1,2] - t_pointcloud_camera[0,2] * dR_dqy[2,2]],
-                         [w_t_w_point[0]* dR_dqz[0,2] + w_t_w_point[1]* dR_dqz[1,2] + w_t_w_point[2]* dR_dqz[2,2] - t_pointcloud_camera[0, 0]* dR_dqz[0,2] - t_pointcloud_camera[0, 1] * dR_dqz[1,2] - t_pointcloud_camera[0,2] * dR_dqz[2,2]],
-                         [w_t_w_point[0]* dR_dqw[0,2] + w_t_w_point[1]* dR_dqw[1,2] + w_t_w_point[2]* dR_dqw[2,2] - t_pointcloud_camera[0, 0]* dR_dqw[0,2] - t_pointcloud_camera[0, 1] * dR_dqw[1,2] - t_pointcloud_camera[0,2] * dR_dqw[2,2]]])
-
-        # dx_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,0] + w_t_w_point[1]* dR_dqx[1,0] + w_t_w_point[2]* dR_dqx[2,0] - t_pointcloud_camera[0, 0]* dR_dqx[0,0] - t_pointcloud_camera[0, 1] * dR_dqx[1,0] - t_pointcloud_camera[0,2] * dR_dqx[2,0]],
-        #                  [w_t_w_point[0]* dR_dqy[0,0] + w_t_w_point[1]* dR_dqy[1,0] + w_t_w_point[2]* dR_dqy[2,0] - t_pointcloud_camera[0, 0]* dR_dqy[0,0] - t_pointcloud_camera[0, 1] * dR_dqy[1,0] - t_pointcloud_camera[0,2] * dR_dqy[2,0]],
-        #                  [w_t_w_point[0]* dR_dqz[0,0] + w_t_w_point[1]* dR_dqz[1,0] + w_t_w_point[2]* dR_dqz[2,0] - t_pointcloud_camera[0, 0]* dR_dqz[0,0] - t_pointcloud_camera[0, 1] * dR_dqz[1,0] - t_pointcloud_camera[0,2] * dR_dqz[2,0]],
-        #                  [w_t_w_point[0]* dR_dqw[0,0] + w_t_w_point[1]* dR_dqw[1,0] + w_t_w_point[2]* dR_dqw[2,0] - t_pointcloud_camera[0, 0]* dR_dqw[0,0] - t_pointcloud_camera[0, 1] * dR_dqw[1,0] - t_pointcloud_camera[0,2] * dR_dqw[2,0]]])
-        # dy_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,1] + w_t_w_point[1]* dR_dqx[1,1] + w_t_w_point[2]* dR_dqx[2,1] - t_pointcloud_camera[0, 0]* dR_dqx[0,1] - t_pointcloud_camera[0, 1] * dR_dqx[1,1] - t_pointcloud_camera[0,2] * dR_dqx[2,1]],
-        #                  [w_t_w_point[0]* dR_dqy[0,1] + w_t_w_point[1]* dR_dqy[1,1] + w_t_w_point[2]* dR_dqy[2,1] - t_pointcloud_camera[0, 0]* dR_dqy[0,1] - t_pointcloud_camera[0, 1] * dR_dqy[1,1] - t_pointcloud_camera[0,2] * dR_dqy[2,1]],
-        #                  [w_t_w_point[0]* dR_dqz[0,1] + w_t_w_point[1]* dR_dqz[1,1] + w_t_w_point[2]* dR_dqz[2,1] - t_pointcloud_camera[0, 0]* dR_dqz[0,1] - t_pointcloud_camera[0, 1] * dR_dqz[1,1] - t_pointcloud_camera[0,2] * dR_dqz[2,1]],
-        #                  [w_t_w_point[0]* dR_dqw[0,1] + w_t_w_point[1]* dR_dqw[1,1] + w_t_w_point[2]* dR_dqw[2,1] - t_pointcloud_camera[0, 0]* dR_dqw[0,1] - t_pointcloud_camera[0, 1] * dR_dqw[1,1] - t_pointcloud_camera[0,2] * dR_dqw[2,1]]])
-        # dz_dq = mat1x4f([[w_t_w_point[0]* dR_dqx[0,2] + w_t_w_point[1]* dR_dqx[1,2] + w_t_w_point[2]* dR_dqx[2,2] - t_pointcloud_camera[0, 0]* dR_dqx[0,2] - t_pointcloud_camera[0, 1] * dR_dqx[1,2] - t_pointcloud_camera[0,2] * dR_dqx[2,2]],
-        #                  [w_t_w_point[0]* dR_dqy[0,2] + w_t_w_point[1]* dR_dqy[1,2] + w_t_w_point[2]* dR_dqy[2,2] - t_pointcloud_camera[0, 0]* dR_dqy[0,2] - t_pointcloud_camera[0, 1] * dR_dqy[1,2] - t_pointcloud_camera[0,2] * dR_dqy[2,2]],
-        #                  [w_t_w_point[0]* dR_dqz[0,2] + w_t_w_point[1]* dR_dqz[1,2] + w_t_w_point[2]* dR_dqz[2,2] - t_pointcloud_camera[0, 0]* dR_dqz[0,2] - t_pointcloud_camera[0, 1] * dR_dqz[1,2] - t_pointcloud_camera[0,2] * dR_dqz[2,2]],
-        #                  [w_t_w_point[0]* dR_dqw[0,2] + w_t_w_point[1]* dR_dqw[1,2] + w_t_w_point[2]* dR_dqw[2,2] - t_pointcloud_camera[0, 0]* dR_dqw[0,2] - t_pointcloud_camera[0, 1] * dR_dqw[1,2] - t_pointcloud_camera[0,2] * dR_dqw[2,2]]])
-
-        # dx_dq = mat1x4f([[dR_dqx[0, 0]*w_t_w_point[0] + dR_dqx[1, 0]*w_t_w_point[1] + dR_dqx[2, 0]*w_t_w_point[2]],
-        #                  [dR_dqy[0, 0]*w_t_w_point[0] + dR_dqy[1, 0] *
-        #                   w_t_w_point[1] + dR_dqy[2, 0]*w_t_w_point[2]],
-        #                  [dR_dqz[0, 0]*w_t_w_point[0] + dR_dqz[1, 0] *
-        #                   w_t_w_point[1] + dR_dqz[2, 0]*w_t_w_point[2]],
-        #                  [dR_dqw[0, 0]*w_t_w_point[0] + dR_dqw[1, 0]*w_t_w_point[1] + dR_dqw[2, 0]*w_t_w_point[2]]])
-
-        # dy_dq = mat1x4f([[dR_dqx[0, 1]*w_t_w_point[0] + dR_dqx[1, 1]*w_t_w_point[1] + dR_dqx[2, 1]*w_t_w_point[2]],
-        #                  [dR_dqy[0, 1]*w_t_w_point[0] + dR_dqy[1, 1] *
-        #                   w_t_w_point[1] + dR_dqy[2, 1]*w_t_w_point[2]],
-        #                  [dR_dqz[0, 1]*w_t_w_point[0] + dR_dqz[1, 1] *
-        #                   w_t_w_point[1] + dR_dqz[2, 1]*w_t_w_point[2]],
-        #                  [dR_dqw[0, 1]*w_t_w_point[0] + dR_dqw[1, 1]*w_t_w_point[1] + dR_dqw[2, 1]*w_t_w_point[2]]])
-
-        # dz_dq = mat1x4f([[dR_dqx[0, 2]*w_t_w_point[0] + dR_dqx[1, 2]*w_t_w_point[1] + dR_dqx[2, 2]*w_t_w_point[2]],
-        #                  [dR_dqy[0, 2]*w_t_w_point[0] + dR_dqy[1, 2] *
-        #                   w_t_w_point[1] + dR_dqy[2, 2]*w_t_w_point[2]],
-        #                  [dR_dqz[0, 2]*w_t_w_point[0] + dR_dqz[1, 2] *
-        #                   w_t_w_point[1] + dR_dqz[2, 2]*w_t_w_point[2]],
-        #                  [dR_dqw[0, 2]*w_t_w_point[0] + dR_dqw[1, 2]*w_t_w_point[1] + dR_dqw[2, 2]*w_t_w_point[2]]])
+        dx_dq = mat1x4f([[w_t_w_point[0] * dR_dqx[0, 0] + w_t_w_point[1] * dR_dqx[1, 0] + w_t_w_point[2] * dR_dqx[2, 0] - t_pointcloud_camera[0, 0] * dR_dqx[0, 0] - t_pointcloud_camera[0, 1] * dR_dqx[1, 0] - t_pointcloud_camera[0, 2] * dR_dqx[2, 0]],
+                         [w_t_w_point[0] * dR_dqy[0, 0] + w_t_w_point[1] * dR_dqy[1, 0] + w_t_w_point[2] * dR_dqy[2, 0] - t_pointcloud_camera[0, 0]
+                             * dR_dqy[0, 0] - t_pointcloud_camera[0, 1] * dR_dqy[1, 0] - t_pointcloud_camera[0, 2] * dR_dqy[2, 0]],
+                         [w_t_w_point[0] * dR_dqz[0, 0] + w_t_w_point[1] * dR_dqz[1, 0] + w_t_w_point[2] * dR_dqz[2, 0] - t_pointcloud_camera[0, 0]
+                             * dR_dqz[0, 0] - t_pointcloud_camera[0, 1] * dR_dqz[1, 0] - t_pointcloud_camera[0, 2] * dR_dqz[2, 0]],
+                         [w_t_w_point[0] * dR_dqw[0, 0] + w_t_w_point[1] * dR_dqw[1, 0] + w_t_w_point[2] * dR_dqw[2, 0] - t_pointcloud_camera[0, 0] * dR_dqw[0, 0] - t_pointcloud_camera[0, 1] * dR_dqw[1, 0] - t_pointcloud_camera[0, 2] * dR_dqw[2, 0]]])
+        dy_dq = mat1x4f([[w_t_w_point[0] * dR_dqx[0, 1] + w_t_w_point[1] * dR_dqx[1, 1] + w_t_w_point[2] * dR_dqx[2, 1] - t_pointcloud_camera[0, 0] * dR_dqx[0, 1] - t_pointcloud_camera[0, 1] * dR_dqx[1, 1] - t_pointcloud_camera[0, 2] * dR_dqx[2, 1]],
+                         [w_t_w_point[0] * dR_dqy[0, 1] + w_t_w_point[1] * dR_dqy[1, 1] + w_t_w_point[2] * dR_dqy[2, 1] - t_pointcloud_camera[0, 0]
+                             * dR_dqy[0, 1] - t_pointcloud_camera[0, 1] * dR_dqy[1, 1] - t_pointcloud_camera[0, 2] * dR_dqy[2, 1]],
+                         [w_t_w_point[0] * dR_dqz[0, 1] + w_t_w_point[1] * dR_dqz[1, 1] + w_t_w_point[2] * dR_dqz[2, 1] - t_pointcloud_camera[0, 0]
+                             * dR_dqz[0, 1] - t_pointcloud_camera[0, 1] * dR_dqz[1, 1] - t_pointcloud_camera[0, 2] * dR_dqz[2, 1]],
+                         [w_t_w_point[0] * dR_dqw[0, 1] + w_t_w_point[1] * dR_dqw[1, 1] + w_t_w_point[2] * dR_dqw[2, 1] - t_pointcloud_camera[0, 0] * dR_dqw[0, 1] - t_pointcloud_camera[0, 1] * dR_dqw[1, 1] - t_pointcloud_camera[0, 2] * dR_dqw[2, 1]]])
+        dz_dq = mat1x4f([[w_t_w_point[0] * dR_dqx[0, 2] + w_t_w_point[1] * dR_dqx[1, 2] + w_t_w_point[2] * dR_dqx[2, 2] - t_pointcloud_camera[0, 0] * dR_dqx[0, 2] - t_pointcloud_camera[0, 1] * dR_dqx[1, 2] - t_pointcloud_camera[0, 2] * dR_dqx[2, 2]],
+                         [w_t_w_point[0] * dR_dqy[0, 2] + w_t_w_point[1] * dR_dqy[1, 2] + w_t_w_point[2] * dR_dqy[2, 2] - t_pointcloud_camera[0, 0]
+                             * dR_dqy[0, 2] - t_pointcloud_camera[0, 1] * dR_dqy[1, 2] - t_pointcloud_camera[0, 2] * dR_dqy[2, 2]],
+                         [w_t_w_point[0] * dR_dqz[0, 2] + w_t_w_point[1] * dR_dqz[1, 2] + w_t_w_point[2] * dR_dqz[2, 2] - t_pointcloud_camera[0, 0]
+                             * dR_dqz[0, 2] - t_pointcloud_camera[0, 1] * dR_dqz[1, 2] - t_pointcloud_camera[0, 2] * dR_dqz[2, 2]],
+                         [w_t_w_point[0] * dR_dqw[0, 2] + w_t_w_point[1] * dR_dqw[1, 2] + w_t_w_point[2] * dR_dqw[2, 2] - t_pointcloud_camera[0, 0] * dR_dqw[0, 2] - t_pointcloud_camera[0, 1] * dR_dqw[1, 2] - t_pointcloud_camera[0, 2] * dR_dqw[2, 2]]])
 
         d_translation_camera_d_q = mat3x4f([[dx_dq[0, 0], dx_dq[0, 1], dx_dq[0, 2], dx_dq[0, 3]],
                                             [dy_dq[0, 0], dy_dq[0, 1],
@@ -396,15 +369,18 @@ def gaussian_point_rasterisation_backward_with_pose(
         multiply = point_grad_uv @ point_grad_q
         multiply_t = point_grad_uv @ point_grad_t
 
-        # # Backpropagation on depth loss
-        # # point_depth_grad: d_depth_d_x_camera
+        # Backpropagation on depth loss
+        # point_grad_depth: in-camera depth gradient
+        # pixel_depth_grad
         # d_depth_d_translation = gaussian_point_3d.depth_jacobian(
         #         T_camera_world=T_camera_pointcloud_mat,
         #     )
-
-        # multiply = point_grad_depth * d_depth_d_translation @ d_translation_camera_d_q
-        # multiply_t = point_grad_depth * d_depth_d_translation @ dxyz_d_t_world_camera
-
+        d_depth_d_translation_camera = mat1x3f([0.,
+                                                0.,
+                                                1.])
+        d_depth_d_q = point_grad_depth * d_depth_d_translation_camera @ d_translation_camera_d_q # Added extra d_depth_d_translation
+        d_depth_d_t = point_grad_depth * d_depth_d_translation_camera @ dxyz_d_t_world_camera
+            
         grad_q[0] = grad_q[0] + multiply[0]
         grad_q[1] = grad_q[1] + multiply[1]
         grad_q[2] = grad_q[2] + multiply[2]
@@ -414,6 +390,14 @@ def gaussian_point_rasterisation_backward_with_pose(
         grad_t[1] = grad_t[1] + multiply_t[1]
         grad_t[2] = grad_t[2] + multiply_t[2]
 
+        grad_q_depth[0] = grad_q_depth[0] + d_depth_d_q[0, 0]
+        grad_q_depth[1] = grad_q_depth[1] + d_depth_d_q[0, 1]
+        grad_q_depth[2] = grad_q_depth[2] + d_depth_d_q[0, 2]
+        grad_q_depth[3] = grad_q_depth[3] + d_depth_d_q[0, 3]
+
+        grad_t_depth[0] = grad_t_depth[0] + d_depth_d_t[0,  0]
+        grad_t_depth[1] = grad_t_depth[1] + d_depth_d_t[0,  1]
+        grad_t_depth[2] = grad_t_depth[2] + d_depth_d_t[0,  2]
         # ------------------------------------------------------------
 
         d_Sigma_prime_d_q, d_Sigma_prime_d_s = gaussian_point_3d.project_to_camera_covariance_jacobian(
@@ -859,11 +843,19 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                         size=(4,), dtype=torch.float32, device=pointcloud.device)
                     grad_t = torch.zeros(
                         size=(3,), dtype=torch.float32, device=pointcloud.device)
-                    grad_delta_pose = torch.zeros(
-                        size=(6,), dtype=torch.float32, device=pointcloud.device)
+                    grad_q_depth = torch.zeros(
+                        size=(4,), dtype=torch.float32, device=pointcloud.device)
+                    grad_t_depth = torch.zeros(
+                        size=(3,), dtype=torch.float32, device=pointcloud.device)
+                    # grad_delta_pose = torch.zeros(
+                    #     size=(6,), dtype=torch.float32, device=pointcloud.device)
                     grad_q = torch.squeeze(grad_q)
                     grad_t = torch.squeeze(grad_t)
-                    grad_delta_pose = torch.squeeze(grad_delta_pose)
+                    grad_t_depth = torch.squeeze(grad_t_depth)
+                    grad_q_depth = torch.squeeze(grad_q_depth)
+                
+                    
+                    # grad_delta_pose = torch.squeeze(grad_delta_pose)
                     gaussian_point_rasterisation_backward_with_pose(
                         camera_height=camera_info.camera_height,
                         camera_width=camera_info.camera_width,
@@ -875,6 +867,8 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                         t_pointcloud_camera=t_pointcloud_camera.contiguous(),
                         grad_q=grad_q,
                         grad_t=grad_t,
+                        grad_q_depth=grad_q_depth,
+                        grad_t_depth=grad_t_depth,
                         pointcloud=pointcloud,
                         pointcloud_features=pointcloud_features,
                         tile_points_start=tile_points_start,
@@ -971,10 +965,27 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                     grad_delta_pose_list, dtype=torch.float32, device="cuda")
                 grad_q = grad_q.view(1, 4)
                 grad_t = grad_t.view(1, 3)
+
+                grad_q_depth = grad_q_depth.view(1, 4)
+                grad_t_depth = grad_t_depth.view(1, 3)
+
                 grad_delta_pose_pointcloud_camera = torch.hstack(
                     (grad_q, grad_t)) @ grad_delta_pose_torch
+                grad_delta_pose_pointcloud_camera_depth = torch.hstack(
+                    (grad_q_depth, grad_t_depth)) @ grad_delta_pose_torch
+
+                
                 grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                    6, 1) + grad_delta_pose_pointcloud_camera_depth.view(
                     6, 1)
+                # # DEBUG
+                # grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                #      6, 1)
+                
+                # # DEBUG
+                # print(grad_q)
+                # print(grad_t)
+                
                 return grad_pointcloud, \
                     grad_pointcloud_features, \
                     None, \

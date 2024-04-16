@@ -81,11 +81,14 @@ class ImagePoseDataset(torch.utils.data.Dataset):
         q_pointcloud_camera_gt, t_pointcloud_camera_gt = q_pointcloud_camera, t_pointcloud_camera
         # q_pointcloud_camera, t_pointcloud_camera = perturb_pose_quaternion_translation_torch(
         #     q_pointcloud_camera, t_pointcloud_camera, self.noise_std_q, self.noise_std_t)
-        T_pointcloud_camera_perturbed = self._pandas_field_to_tensor(
-            self.df.iloc[idx]["T_pointcloud_camera_perturbed"])
-        q_pointcloud_camera, t_pointcloud_camera = SE3_to_quaternion_and_translation_torch(
-            T_pointcloud_camera_perturbed.unsqueeze(0))
-        
+        try:
+            T_pointcloud_camera_perturbed = self._pandas_field_to_tensor(
+                self.df.iloc[idx]["T_pointcloud_camera_perturbed"])
+            q_pointcloud_camera, t_pointcloud_camera = SE3_to_quaternion_and_translation_torch(
+                T_pointcloud_camera_perturbed.unsqueeze(0))
+        except:
+            q_pointcloud_camera, t_pointcloud_camera = None, None
+            
         camera_intrinsics = self._pandas_field_to_tensor(
             self.df.iloc[idx]["camera_intrinsics"])
         base_camera_height = self.df.iloc[idx]["camera_height"]

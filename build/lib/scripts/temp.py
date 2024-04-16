@@ -2,7 +2,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import re
-dirs = os.listdir("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output")
+
+folder = "3dgs_playground_output"
+dirs = os.listdir(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}")
 print(dirs)
 
 errors_q = []
@@ -13,13 +15,14 @@ for dir in dirs:
         epoch = int(re.search(pattern, dir).group())
         print(epoch)
         #if epoch < 10 or (epoch >45 and epoch < 55):
-        if epoch != 29 and epoch !=59:
-            file_path = os.path.join("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output", dir)
+        # if epoch != 29 and epoch !=59:
+        if epoch > -1:
+            file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_q.out")
-            err_q = np.loadtxt(file_path, delimiter=",").reshape(3000, 4)
-            file_path = os.path.join("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output", dir)
+            err_q = np.loadtxt(file_path, delimiter=",").reshape(2000, 1)
+            file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_t.out")
-            err_t = np.loadtxt(file_path, delimiter=",").reshape(3000, 3)
+            err_t = np.loadtxt(file_path, delimiter=",").reshape(2000, 3)
             # err_t = err_t + np.array([-0.018, 0.006, 0.007]).T
             if (not np.isnan(err_q).any()) and (not np.isnan(err_t).any()):
                 errors_q.append(err_q)
@@ -27,71 +30,74 @@ for dir in dirs:
         
 errors_q_numpy = np.array(errors_q)
 errors_t_numpy = np.array(errors_t)
-# np.savetxt("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/errors_q.out", errors_q_numpy, delimiter=',')
-# np.savetxt("/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/errors_t.out", errors_t_numpy, delimiter=',')
 errors_q_mean = np. mean(
     errors_q_numpy, axis=0)  # epochs x 4 array
 errors_t_mean = np. mean(
     errors_t_numpy, axis=0)  # epochs x 3 array
+
+print(errors_q_mean.shape)
+print(errors_t_mean.shape)
+np.savetxt(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/errors_q.out", errors_q_mean, delimiter=',')
+np.savetxt(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/errors_t.out", errors_t_mean, delimiter=',')
 
 print(errors_q_numpy.shape)
 print(errors_q_mean.shape)
 print(errors_q_mean[:, 0].shape)
 
 plt.figure()
-plt.plot(errors_q_mean[:, 0])
-plt.plot(errors_q_mean[:, 1])
-plt.plot(errors_q_mean[:, 2])
-plt.plot(errors_q_mean[:, 3])
-plt.xlabel("Epoch")
-plt.ylabel("Error")
-plt.title("Rotational error")
+plt.plot(errors_q_mean)
+# plt.plot(errors_q_mean[:, 1])
+# plt.plot(errors_q_mean[:, 2])
+# plt.plot(errors_q_mean[:, 3])
+plt.xlabel(f"Epoch")
+plt.ylabel(f"Error")
+plt.title(f"Rotational error")
 plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/rot_error.png")
+    f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/rot_error.png")
 plt.clf()
 
 errors_q_norm = np.linalg.norm(errors_q_mean, axis=1)
 print(errors_q_norm.shape)
 plt.plot(errors_q_norm)
-plt.xlabel("Epoch")
-plt.ylabel("Error Norm")
-plt.title("Rotational error Norm")
+plt.xlabel(f"Epoch")
+plt.ylabel(f"Error Norm")
+plt.title(f"Rotational error Norm")
 plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/rot_error_norm.png")
+    f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/rot_error_norm.png")
 plt.clf()
 
 plt.plot(errors_t_mean[:, 0])
 plt.plot(errors_t_mean[:, 1])
 plt.plot(errors_t_mean[:, 2])
-plt.xlabel("Epoch")
-plt.ylabel("Error")
-plt.title("Translational error")
+plt.xlabel(f"Epoch")
+plt.ylabel(f"Error")
+plt.title(f"Translational error")
 plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/trasl_error.png")
+    f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/trasl_error.png")
 plt.clf()
 
 errors_t_norm = np.linalg.norm(errors_t_mean, axis=1)
 plt.plot(errors_t_norm)
-plt.xlabel("Epoch")
-plt.ylabel("Error Norm")
-plt.title("Translational error Norm")
+plt.xlabel(f"Epoch")
+plt.ylabel(f"Error Norm")
+plt.title(f"Translational error Norm")
 plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/trasl_error_norm.png")
+    f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/trasl_error_norm.png")
 plt.clf()
 
-plt.plot(errors_q_mean[500:])
-plt.xlabel("Epoch")
-plt.ylabel("Error")
-plt.title("Rotational error")
-plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/rot_error_hq.png")
-plt.clf()
+plt.figure(figsize=(10, 6))
+plt.xlabel(f"Epoch", fontsize="x-large")
+plt.plot(errors_t_norm,label='Translation Error ')
+plt.legend(loc='upper right', fontsize="x-large")
+plt.ylabel('Translation [m]', fontsize="x-large")
+plt.twinx()
+plt.ylabel(f"Rotation [rad]", fontsize="x-large")
+plt.plot(errors_q_mean, color='orange', label='Rotation Error')
+plt.title(f"Translational  and Rotational Error")
+plt.legend(loc=(0.7, 0.8), fontsize="x-large")
+plt.grid(True)
+plt.subplots_adjust(right=0.85, bottom=0.15)
 
-plt.plot(errors_t_mean[500:])
-plt.xlabel("Epoch")
-plt.ylabel("Error")
-plt.title("Translational error")
 plt.savefig(
-    "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/3dgs_playground_output/trasl_error_hq.png")
+    f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}/rot_trasl_error_norm.png")
 plt.clf()
-

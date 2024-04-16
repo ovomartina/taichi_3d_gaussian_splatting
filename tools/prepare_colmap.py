@@ -267,7 +267,7 @@ o3d.io.write_point_cloud(os.path.join(
 data = []
 idx = 0
 sorted_images = sorted(images.items(), key=lambda x: x[0])
-images = sorted_images[::-1]
+images = sorted_images#[::-1]
 
 for name, image in images:
     idx += 1
@@ -315,7 +315,7 @@ for name, image in images:
     break
     """
 items = os.listdir(depth_path)
-sorted_items = sorted(items)[::-1]
+sorted_items = sorted(items)#[::-1]
 for item,name in  zip(data, sorted_items):
     depth_full_path = os.path.join(depth_path, name)
     item["depth_path"] = depth_full_path
