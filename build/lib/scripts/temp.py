@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-folder = "3dgs_playground_output"
+folder = "3dgs_playground_output_2000_fine"
 dirs = os.listdir(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}")
 print(dirs)
 
@@ -23,17 +23,22 @@ for dir in dirs:
             file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_t.out")
             err_t = np.loadtxt(file_path, delimiter=",").reshape(2000, 3)
-            # err_t = err_t + np.array([-0.018, 0.006, 0.007]).T
             if (not np.isnan(err_q).any()) and (not np.isnan(err_t).any()):
                 errors_q.append(err_q)
                 errors_t.append(err_t)
         
 errors_q_numpy = np.array(errors_q)
 errors_t_numpy = np.array(errors_t)
+
 errors_q_mean = np. mean(
     errors_q_numpy, axis=0)  # epochs x 4 array
 errors_t_mean = np. mean(
     errors_t_numpy, axis=0)  # epochs x 3 array
+
+errors_t_norm = np.linalg.norm(errors_t_numpy, axis=2)
+errors_t_mean_new = np.mean(
+    errors_t_norm, axis=0) 
+print(f"errors_t_mean_new: {errors_t_mean_new}")
 
 print(errors_q_mean.shape)
 print(errors_t_mean.shape)
@@ -77,6 +82,7 @@ plt.savefig(
 plt.clf()
 
 errors_t_norm = np.linalg.norm(errors_t_mean, axis=1)
+print(f"errors_t_norm:{errors_t_norm}")
 plt.plot(errors_t_norm)
 plt.xlabel(f"Epoch")
 plt.ylabel(f"Error Norm")
@@ -87,7 +93,7 @@ plt.clf()
 
 plt.figure(figsize=(10, 6))
 plt.xlabel(f"Epoch", fontsize="x-large")
-plt.plot(errors_t_norm,label='Translation Error ')
+plt.plot(errors_t_mean_new,label='Translation Error ')
 plt.legend(loc='upper right', fontsize="x-large")
 plt.ylabel('Translation [m]', fontsize="x-large")
 plt.twinx()

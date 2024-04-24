@@ -227,6 +227,7 @@ class PoseEstimator():
                 
                 errors_t_current_pic = []
                 errors_q_current_pic = []
+                loss_current_pic = []
 
                 rotation_groundtruth = sym.Rot3(
                     groundtruth_q_pointcloud_camera_numpy[0, :])
@@ -301,11 +302,11 @@ class PoseEstimator():
                 scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
-                num_coarse_epochs = 0 #3000
+                num_coarse_epochs = 0 #1000 #3000
                 num_epochs = 2000  # 1000
                 downsample_factor = 2
-                ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
-                                                                                                                                                 None,
+                ground_truth_image_downsampled, resized_camera_info_downsampled, resized_depth_image_downsampled = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
+                                                                                                                                                 depth_image,
                                                                                                                                                  self.camera_info,
                                                                                                                                                  downsample_factor)
                 
@@ -335,8 +336,9 @@ class PoseEstimator():
                             current_pose)
                         current_q_numpy_array = current_q.clone().detach().cpu().numpy()
                         current_t_numpy_array = current_t.clone().detach().cpu().numpy()
+                        error_t = current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy()
                         errors_t_current_pic.append(
-                            current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy())
+                            error_t)
                         # errors_q_current_pic.append(
                         #     current_q_numpy_array - groundtruth_q_pointcloud_camera.cpu().numpy())
                         
@@ -351,8 +353,10 @@ class PoseEstimator():
                         if angle_difference > np.pi:
                             angle_difference = 2*np.pi - angle_difference
                         errors_q_current_pic.append(angle_difference)
+                        
+                        
 
-                    predicted_image, _, _, _ = self.rasteriser(
+                    predicted_image, predicted_depth, _, _ = self.rasteriser(
                         GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
                             point_cloud=self.scene.point_cloud,
                             point_cloud_features=self.scene.point_cloud_features,
@@ -372,14 +376,30 @@ class PoseEstimator():
                         predicted_image, min=0, max=1)
                     predicted_image = predicted_image.permute(2, 0, 1)
 
+                    predicted_depth = predicted_depth.cuda()
+                    predicted_depth = predicted_depth/torch.max(predicted_depth)
+                    
                     if len(predicted_image.shape) == 3:
                         predicted_image_temp = predicted_image.unsqueeze(0)
                     if len(ground_truth_image_downsampled.shape) == 3:
                         ground_truth_image_temp = ground_truth_image_downsampled.unsqueeze(0)
                     L1 = 0.8*torch.abs(predicted_image - ground_truth_image_downsampled).mean()  + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
                            data_range=1, size_average=True))
-                    L1.backward()
-
+                    # L1.backward()
+                    
+                    # DEBUG =======================
+                    depth_map = resized_depth_image_downsampled.cuda()
+                    # =============================
+                    
+                    depth_mask = torch.where(depth_map >= 0, True, False)
+                    depth_map = depth_map / torch.max(depth_map)
+                    
+                    masked_difference = torch.abs(predicted_depth - depth_map) #[depth_mask]
+                    L_DEPTH = masked_difference.mean()
+                    L = L1 + 0.1 * L_DEPTH
+                    L.backward()
+                    loss_current_pic.append(L.item())
+                    
                     if (not torch.isnan(delta_tensor_q.grad).any()) and (not torch.isnan(delta_tensor_t.grad).any()):
                         optimizer_delta_q.step()
                         optimizer_delta_t.step()
@@ -430,8 +450,9 @@ class PoseEstimator():
                         current_q, current_t = extract_q_t_from_pose(
                             current_pose)
                         current_t_numpy_array = current_t.clone().detach().cpu().numpy()
+                        error_t = current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy()
                         errors_t_current_pic.append(
-                            current_t_numpy_array - groundtruth_t_pointcloud_camera.cpu().numpy())  # Mantain axes
+                            error_t) 
                         
                         # Quaternion error as rad
                         q_pointcloud_camera_gt_inverse = groundtruth_q_pointcloud_camera * \
@@ -444,6 +465,9 @@ class PoseEstimator():
                         if angle_difference > np.pi:
                             angle_difference = 2*np.pi - angle_difference
                         errors_q_current_pic.append(angle_difference)
+                        
+                        if epoch == 0:
+                            print(f"Initial error: \n\t q:{angle_difference},\n\t t:{np.linalg.norm(error_t)}")
                         
                     # Set the gradient to zero
                     delta_tensor = torch.cat(
@@ -489,7 +513,7 @@ class PoseEstimator():
                             initial_q=initial_q_numpy,
                             initial_t=initial_t_numpy,
                             camera_info=resized_camera_info,
-                            color_max_sh_band=3,
+                            color_max_sh_band=3
                         )
                     )
 
@@ -514,12 +538,13 @@ class PoseEstimator():
                         
                     L = L1 + 0.1 * L_DEPTH
                     L.backward()
-
+                    loss_current_pic.append(L.item())
+                    
                     if (not torch.isnan(delta_tensor_q.grad).any()) and (not torch.isnan(delta_tensor_t.grad).any()):
                         optimizer_delta_q.step()
                         optimizer_delta_t.step()
                         
-                    if epoch % 5 == 0:
+                    if epoch % 10 == 0:
                         scheduler.step()
                         for param_group in optimizer_delta_q.param_groups:
                             if param_group['lr'] < 1e-5:
@@ -567,6 +592,7 @@ class PoseEstimator():
                 errors_q_current_pic = np.array(errors_q_current_pic)
                 errors_q_current_pic = errors_q_current_pic.reshape(
                     (num_epochs + num_coarse_epochs, 1))
+                loss_current_pic = np.array(loss_current_pic)
                 errors_t.append(errors_t_current_pic)
                 errors_q.append(errors_q_current_pic)
 
@@ -588,6 +614,25 @@ class PoseEstimator():
                 plt.legend()
                 plt.savefig(os.path.join(
                     self.output_path, f'epochs_delta_{count-1}/trasl_error.png'))
+                plt.clf()
+                
+                errors_t_current_pic_norm = np.linalg.norm(errors_t_current_pic, axis=1)
+                plt.plot(errors_t_current_pic_norm, color='red', label='x')
+                plt.xlabel("Epoch")
+                plt.ylabel("Error")
+                plt.title("Translational error")
+                plt.legend()
+                plt.savefig(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/trasl_error_norm.png'))
+                plt.clf()
+                
+                plt.plot(loss_current_pic, color='red', label='loss')
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.title("Loss")
+                plt.legend()
+                plt.savefig(os.path.join(
+                    self.output_path, f'epochs_delta_{count-1}/loss.png'))
                 plt.clf()
 
                 np.savetxt(os.path.join(

@@ -31,6 +31,8 @@ import pandas as pd
 # DEBUG - allow reproducibility
 torch.manual_seed(42)
 
+_EPS = 1e-6  # Possible problems with 1e-8 because of using float32
+
 
 def cycle(dataloader):
     while True:
@@ -194,9 +196,9 @@ class GaussianPointTrainerBundleAdjustment:
 
             # Separate optimization for q and t
             self.optimizers_q_list.append(torch.optim.Adam(
-                [self.delta_q_list[i]], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2))
+                [self.delta_q_list[i]], lr=1e-3, betas=(0.9, 0.999))) 
             self.optimizers_t_list.append(torch.optim.Adam(
-                [self.delta_t_list[i]], lr=5e-3, betas=(0.9, 0.999), weight_decay=1e-2))
+                [self.delta_t_list[i]], lr=1e-3, betas=(0.9, 0.999)))
 
             self.q_scheduler_list.append(torch.optim.lr_scheduler.ExponentialLR(
                 optimizer=self.optimizers_q_list[i], gamma=0.9947))
@@ -207,11 +209,16 @@ class GaussianPointTrainerBundleAdjustment:
                               [0.48165509,  0.04348471, -0.06376747,  0.4119509],
                               [0.02594256, -0.47077614, -0.12508256, -0.20647023],
                               [0.,          0.,          0.,          1.]])
+
+        # DEBUG colmap =========================================================
+        # self.scene = GaussianPointCloudScene.from_parquet(
+        #     self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
         transform = np.eye(4)
         self.scene = GaussianPointCloudScene.from_parquet(
             self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
+        # ======================================================================
 
-        # # DEBUG: load scene already trained 30k iterations
+        # # DEBUG sanity check: load scene already trained 30k iterations
         # scene = GaussianPointCloudScene.from_parquet(
         #     "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet", config=GaussianPointCloudScene.PointCloudSceneConfig(max_num_points_ratio=None))
         # self.scene = merge_scenes([scene])
@@ -323,14 +330,15 @@ class GaussianPointTrainerBundleAdjustment:
             image_gt, q_pointcloud_camera_current, t_pointcloud_camera_current, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera_gt, t_pointcloud_camera_gt = next(
                 train_data_loader_iter)
 
-            # # DEBUG colmap =======================================================
-            # q_pointcloud_camera_current = q_pointcloud_camera_gt
-            # t_pointcloud_camera_current = t_pointcloud_camera_gt
-            # groundtruth_T_colmap_camera = torch.tensor(
-            #     df.iloc[index]["T_colmap_camera"])
-            # q_pointcloud_camera_gt, t_pointcloud_camera_gt = SE3_to_quaternion_and_translation_torch(groundtruth_T_colmap_camera.unsqueeze(0))
-            # # ====================================================================
-            
+            # DEBUG colmap =======================================================
+            q_pointcloud_camera_current = q_pointcloud_camera_gt
+            t_pointcloud_camera_current = t_pointcloud_camera_gt
+            groundtruth_T_colmap_camera = torch.tensor(
+                df.iloc[index]["T_colmap_camera"])
+            q_pointcloud_camera_gt, t_pointcloud_camera_gt = SE3_to_quaternion_and_translation_torch(
+                groundtruth_T_colmap_camera.unsqueeze(0))
+            # ====================================================================
+
             # Sanity check
             # if total_iteration_count < self.config.start_pose_optimization:
             #     groundtruth_q[index] = q_pointcloud_camera_gt
@@ -391,14 +399,32 @@ class GaussianPointTrainerBundleAdjustment:
                 # set to GT
                 initial_q[index] = noisy_q_pointcloud_camera_numpy
                 initial_t[index] = noisy_t_pointcloud_camera_numpy
+
+                # Initialize errors_q and errors_t
+                q_pointcloud_camera_gt_inverse = groundtruth_q[index] * \
+                    np.array([-1., -1., -1., 1.])
+                q_difference = quaternion_multiply_numpy(q_pointcloud_camera_gt_inverse.reshape(
+                    (1, 4)), initial_q[index].reshape((1, 4)),)
+                q_difference = q_difference.cpu().numpy()
+                angle_difference = np.abs(
+                    2*np.arctan2(np.linalg.norm(q_difference[0, 0:3]), q_difference[0, 3]))
+
+                if angle_difference > np.pi:
+                    angle_difference = 2*np.pi - angle_difference
+                error_q = angle_difference
+                error_t = torch.linalg.vector_norm(
+                    torch.tensor(initial_t[index]) - groundtruth_t[index])
+
+                self.errors_q[index].append(error_q)
+                self.errors_t[index].append(error_t)
+
             else:
-                epsilon = 0.0001
                 # delta_numpy_array = self.delta_list[index].clone(
                 # ).detach().cpu().numpy()
                 delta_numpy_array = delta_tensor.clone(
                 ).detach().cpu().numpy()
                 current_pose = sym.Pose3.retract(
-                    initial_noisy_poses[index], delta_numpy_array, epsilon)
+                    initial_noisy_poses[index], delta_numpy_array, _EPS)
                 q_pointcloud_camera, t_pointcloud_camera = extract_q_t_from_pose(
                     initial_noisy_poses[index])
 
@@ -409,19 +435,15 @@ class GaussianPointTrainerBundleAdjustment:
             camera_info.camera_intrinsics = camera_info.camera_intrinsics.cuda()
             camera_info.camera_width = int(camera_info.camera_width)
             camera_info.camera_height = int(camera_info.camera_height)
-            error_q = 0.
-            error_t = 0.
+            # error_q = 0.
+            # error_t = 0.
             plt.figure()
             image_gt_original = image_gt
             camera_info_original = camera_info
             depth_gt_original = depth_gt
 
-            # if total_iteration_count%increase_pose_iterations==0:
-            #         pose_iterations = int(pose_iterations*pose_iteration_increase_factor)
             pose_iterations = 10
             coarse_iterations = 0
-            # if total_iteration_count > increase_pose_iterations_from:
-            #     pose_iterations = 30
 
             if optimize_pose:
                 print("optimizing pose")
@@ -440,26 +462,22 @@ class GaussianPointTrainerBundleAdjustment:
                     #     image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
                     #         image_gt, depth_gt, camera_info, None, 2)  # Always downsample image for pose optimization
 
-                    if k < coarse_iterations and downsample_factor < 4:
-                        coarse_downsample_factor = downsample_factor * 2
-                        try:
-                            assert downsample_factor <= 4
-                        except Exception as e:
-                            print("Coarse downsample factor")
-                            print(e)
-                        image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
-                            image_gt, depth_gt, camera_info, None, downsample_factor=coarse_downsample_factor)  # downsample_factor=1
+                    # if k < coarse_iterations and downsample_factor < 4:
+                    #     coarse_downsample_factor = downsample_factor * 2
+                    #     try:
+                    #         assert downsample_factor <= 4
+                    #     except Exception as e:
+                    #         print("Coarse downsample factor")
+                    #         print(e)
+                    #     image_gt, camera_info, depth_gt, _ = GaussianPointTrainerBundleAdjustment._downsample_image_and_camera_info(
+                    #         image_gt, depth_gt, camera_info, None, downsample_factor=coarse_downsample_factor)  # downsample_factor=1
 
                     for i in range(len(self.train_dataset)):
                         self.optimizers_q_list[i].zero_grad()
                         self.optimizers_t_list[i].zero_grad()
 
-                    delta_tensor = torch.cat(
-                        (self.delta_q_list[index], self.delta_t_list[index]), axis=0).contiguous()
-
                     with torch.no_grad():
                         # Save for plotting
-                        epsilon = 0.0001
                         delta_numpy_array = delta_tensor.clone(
                         ).detach().cpu().numpy()
                         initial_rotation = sym.Rot3(
@@ -467,7 +485,7 @@ class GaussianPointTrainerBundleAdjustment:
                         initial_pose = sym.Pose3(
                             R=initial_rotation, t=initial_t[index].astype("float"))
                         current_pose = sym.Pose3.retract(
-                            initial_pose, delta_numpy_array, epsilon)
+                            initial_pose, delta_numpy_array, _EPS)
                         current_q, current_t = extract_q_t_from_pose(
                             current_pose)
 
@@ -489,13 +507,15 @@ class GaussianPointTrainerBundleAdjustment:
                         if not np.isnan(error_q):
                             self.errors_q[index].append(error_q)
                         else:
+                            print(f"Current delta:\n\t{delta_numpy_array}")
+                            print(f"Current pose:\n\t{current_pose}")
                             print("Angle error_q is Nan")
-                            print(f"q_pointcloud_camera_gt: \n\t{q_pointcloud_camera_gt}, \
-                                  q_pointcloud_camera_gt_inverse: \n\t {q_pointcloud_camera_gt_inverse} \
-                                  q_difference: \n\t {q_difference}, \
-                                  current_q: {current_q}, \
+                            print(f"Index {index}, q_pointcloud_camera_gt: \n\t{q_pointcloud_camera_gt},\n \
+                                  q_pointcloud_camera_gt_inverse: \n\t {q_pointcloud_camera_gt_inverse}\n \
+                                  q_difference: \n\t {q_difference},\n \
+                                  current_q: {current_q},\n \
                                   angle_difference: {angle_difference}")
-                            
+
                         self.errors_t[index].append(error_t)
 
                     gaussian_point_cloud_rasterisation_input = GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
@@ -523,17 +543,21 @@ class GaussianPointTrainerBundleAdjustment:
                         image_pred = image_pred.unsqueeze(0)
                     if len(image_gt.shape) == 3:
                         image_gt = image_gt.unsqueeze(0)
-                    print(f"Image predicted shape:{image_pred.shape}")
-                    print(f"Image gt shape:{image_gt.shape}")
+
                     loss = 0.8*torch.abs(image_pred - image_gt).mean() + 0.2*(1 - ssim(image_pred, image_gt,
                                                                                        data_range=1, size_average=True))
 
                     loss.backward()
-
-                    if (not torch.isnan(self.delta_q_list[index].grad).any()):
+                    print(f"self.delta_q_list[index].grad: \n\t{self.delta_q_list[index].grad}\n \
+                        self.delta_t_list[index].grad: \n\t{self.delta_t_list[index].grad}")
+                    
+                    if (not torch.isnan(self.delta_q_list[index].grad).any()) and (not torch.isnan(self.delta_t_list[index].grad).any()):
                         self.optimizers_q_list[index].step()
-                    if (not torch.isnan(self.delta_t_list[index].grad).any()):
                         self.optimizers_t_list[index].step()
+
+                        delta_tensor = torch.cat(
+                            (self.delta_q_list[index], self.delta_t_list[index]), axis=0).contiguous()
+
                     if pose_iterations_count[index] % 10 == 0:
                         self.q_scheduler_list[index].step()
                         self.t_scheduler_list[index].step()
@@ -556,6 +580,18 @@ class GaussianPointTrainerBundleAdjustment:
                             self.scene, writer=self.writer, iteration=total_iteration_count)
                         self.writer.add_histogram(
                             "train/pixel_valid_point_count", pixel_valid_point_count, total_iteration_count)
+
+                    # Plot q and t gradients
+                    try:
+                        self.writer.add_histogram(
+                            "grad/q_grad", self.delta_q_list[index].grad, total_iteration_count)
+                        self.writer.add_histogram(
+                            "grad/t_grad", self.delta_t_list[index].grad, total_iteration_count)
+                    except Exception as e:
+                        print("Exception plotting instagram")
+                        print(e)
+                        print(self.delta_q_list[index].grad)
+                        print(self.delta_t_list[index].grad)
 
                     if total_iteration_count % self.config.log_loss_interval == 0:
                         self.writer.add_scalar(
@@ -630,7 +666,6 @@ class GaussianPointTrainerBundleAdjustment:
                                 [tensor.item() for tensor in entry_t])
                             np.savetxt(
                                 f'errors/error_t_{i}.txt', numpy_array_t)
-                            # Why didn't it save it???
 
                     del image_pred, image_depth, loss
                     # they use 7000 in paper, it's hard to set a interval so hard code it here
@@ -646,10 +681,9 @@ class GaussianPointTrainerBundleAdjustment:
                 delta_numpy_array = delta_tensor.clone(
                 ).detach().cpu().numpy()
                 current_pose_estimate = sym.Pose3.retract(
-                    initial_noisy_poses[index], delta_numpy_array, 0.0001)
+                    initial_noisy_poses[index], delta_numpy_array, _EPS)
                 current_q_estimate, current_t_estimate = extract_q_t_from_pose(
                     current_pose_estimate)
-
                 try:
                     with torch.no_grad():
                         error_q_numpy = np.array(
@@ -689,7 +723,6 @@ class GaussianPointTrainerBundleAdjustment:
             # Set lidar position to current estimate
             delta_tensor = torch.cat(
                 (self.delta_q_list[index], self.delta_t_list[index]), axis=0)
-            epsilon = 0.0001
 
             delta_numpy_array = delta_tensor.clone(
             ).detach().cpu().numpy()
@@ -699,7 +732,7 @@ class GaussianPointTrainerBundleAdjustment:
             initial_pose = sym.Pose3(
                 R=initial_rotation, t=initial_t[index].astype("float"))
             current_pose = sym.Pose3.retract(
-                initial_pose, delta_numpy_array, epsilon)
+                initial_pose, delta_numpy_array, _EPS)
             current_q_estimate, current_t_estimate = extract_q_t_from_pose(
                 current_pose)
 
@@ -717,12 +750,13 @@ class GaussianPointTrainerBundleAdjustment:
                 (camera_info_original.camera_height, camera_info_original.camera_width), -1.0, device="cuda")
             if lidar_pcd is not None:
                 lidar_measurement = Lidar(
-                    lidar_pcd.cuda(), t_lidar_camera.cuda()) 
+                    lidar_pcd.cuda(), t_lidar_camera.cuda())
                 # DEBUG =================================================================
-                # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(lidar_measurement.point_cloud)
+                lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
+                    lidar_measurement.point_cloud)
                 # ===================================================
                 visible_points = lidar_measurement.lidar_points_visible(
-                    lidar_measurement.point_cloud, # lidar_pointcloud_colmap,
+                    lidar_pointcloud_colmap,  # lidar_measurement.point_cloud, #
                     T_pointcloud_camera,
                     camera_info_original.camera_intrinsics,
                     (camera_info_original.camera_width, camera_info_original.camera_height))
@@ -738,7 +772,7 @@ class GaussianPointTrainerBundleAdjustment:
             # Bundle adjustment
             depth_map_original = depth_map
 
-            self.iterations_bundle_adjustment = 1  
+            self.iterations_bundle_adjustment = 1
 
             # if total_iteration_count > increase_pose_iterations_from:
             #     self.iterations_bundle_adjustment = 60
@@ -775,7 +809,6 @@ class GaussianPointTrainerBundleAdjustment:
                 if optimize_pose:
                     with torch.no_grad():
                         # Save for plotting
-                        epsilon = 0.0001
                         delta_numpy_array = delta_tensor.clone(
                         ).detach().cpu().numpy()
                         initial_rotation = sym.Rot3(
@@ -783,7 +816,7 @@ class GaussianPointTrainerBundleAdjustment:
                         initial_pose = sym.Pose3(
                             R=initial_rotation, t=initial_t[index].astype("float"))
                         current_pose = sym.Pose3.retract(
-                            initial_pose, delta_numpy_array, epsilon)
+                            initial_pose, delta_numpy_array, _EPS)
                         current_q, current_t = extract_q_t_from_pose(
                             current_pose)
 
@@ -1048,7 +1081,6 @@ class GaussianPointTrainerBundleAdjustment:
                 pose = initial_noisy_poses[i]
                 perturbed_pointcloud_camera_q, perturbed_pointcloud_camera_t = extract_q_t_from_pose(
                     initial_noisy_poses[i])
-                epsilon = 0.0001
 
                 delta_tensor = torch.cat(
                     (self.delta_q_list[i], self.delta_t_list[i]), axis=0)
@@ -1057,7 +1089,7 @@ class GaussianPointTrainerBundleAdjustment:
                 delta_numpy_array = delta_tensor.clone(
                 ).detach().cpu().numpy()
                 current_pose = sym.Pose3.retract(
-                    initial_noisy_poses[i], delta_numpy_array, epsilon)
+                    initial_noisy_poses[i], delta_numpy_array, _EPS)
                 final_pointcloud_camera_q, final_pointcloud_camera_t = extract_q_t_from_pose(
                     current_pose)
                 row_data = {
@@ -1219,10 +1251,11 @@ class GaussianPointTrainerBundleAdjustment:
                     lidar_measurement = Lidar(
                         lidar_pcd.cuda(), t_lidar_camera.cuda())
                     # DEBUG =================================================================
-                    # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(lidar_measurement.point_cloud)
+                    lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
+                        lidar_measurement.point_cloud)
                     # ===================================================
                     visible_points = lidar_measurement.lidar_points_visible(
-                        lidar_measurement.point_cloud, #lidar_pointcloud_colmap,
+                        lidar_pointcloud_colmap,  # lidar_measurement.point_cloud, #
                         T_pointcloud_camera,
                         camera_info.camera_intrinsics,
                         (camera_info.camera_width, camera_info.camera_height))

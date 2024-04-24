@@ -59,6 +59,6 @@ rasterisation_config:
   near_plane: 0.001
   rgb_only: false
 summary_writer_log_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment
-train_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/train_groundtruth.json #train.json
-val_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/val_groundtruth.json #val.json
+train_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/train.json #train_groundtruth.json #
+val_dataset_json_path: data/replica_colmap/room_1_high_quality_500_frames/val.json #val_groundtruth.json #
 val_interval: 5000

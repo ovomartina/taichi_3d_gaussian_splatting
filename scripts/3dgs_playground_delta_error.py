@@ -11,6 +11,9 @@ from dataclasses import dataclass
 from typing import List, Tuple
 import torch
 import numpy as np
+import pylab as pl
+import pickle
+
 # %%
 import os
 import PIL.Image
@@ -20,6 +23,8 @@ import matplotlib.pyplot as plt
 import torchvision
 import sym
 import open3d as o3d
+import plotCoordinateFrame
+import pypose as pp
 
 # DEBUG - allow reproducibility
 torch.manual_seed(42)
@@ -147,13 +152,14 @@ class PoseEstimator():
             d = json.load(f)
             errors_t = []
             errors_q = []
-            count = 0
-            for view in d:
-                count += 1
+            optimized_poses_lie = np.zeros((len(d), 6))
+            groundtruth_poses_lie = np.zeros((len(d), 6))
+
+            for count, view in enumerate(d):
                 print(
-                    f"=================Image {count-1}========================")
-                if count % 8 != 0:
-                    continue
+                    f"=================Image {count}========================")
+                # if count % 8 != 0:
+                #     continue
 
                 # Load groundtruth image
                 ground_truth_image_path = view["image_path"]
@@ -198,6 +204,7 @@ class PoseEstimator():
                 groundtruth_q_pointcloud_camera_numpy = groundtruth_q_pointcloud_camera.cpu().numpy()
                 groundtruth_t_pointcloud_camera_numpy = groundtruth_t_pointcloud_camera.cpu().numpy()
 
+                
                 # Save groundtruth image
                 im = PIL.Image.fromarray(
                     (ground_truth_image_numpy).astype(np.uint8))
@@ -207,20 +214,24 @@ class PoseEstimator():
                         f'groundtruth/groundtruth_{count-1}.png'))
 
                 # Get lidar file if available
-                lidar_path = view['lidar_path']
-                if lidar_path:
-                    lidar_pcd = o3d.io.read_point_cloud(
-                        view['lidar_path'])
-                    lidar_pcd = torch.tensor(lidar_pcd.points)
-                    T_lidar_camera = torch.tensor(
-                        view['T_camera_lidar'])
+                # DEBUG
+                try:
+                    lidar_path = view['lidar_path']
+                    if lidar_path:
+                        lidar_pcd = o3d.io.read_point_cloud(
+                            view['lidar_path'])
+                        lidar_pcd = torch.tensor(lidar_pcd.points)
+                        T_lidar_camera = torch.tensor(
+                            view['T_camera_lidar'])
 
-                    if len(lidar_pcd) <= 0:
-                        lidar_pcd = None
-                        T_lidar_camera = None
+                        if len(lidar_pcd) <= 0:
+                            lidar_pcd = None
+                            T_lidar_camera = None
 
-                lidar_measurement = Lidar(
-                    lidar_pcd.cuda(), T_lidar_camera.cuda())
+                    lidar_measurement = Lidar(
+                        lidar_pcd.cuda(), T_lidar_camera.cuda())
+                except:
+                    pass
 
                 errors_t_current_pic = []
                 errors_q_current_pic = []
@@ -229,6 +240,8 @@ class PoseEstimator():
                     groundtruth_q_pointcloud_camera_numpy[0, :])
                 pose_groundtruth = sym.Pose3(
                     R=rotation_groundtruth, t=groundtruth_t_pointcloud_camera_numpy.T.astype("float"))
+
+                groundtruth_poses_lie[count, :] = pose_groundtruth.to_tangent()
 
                 delta_numpy_array_q = np.random.normal(0, 0.02, (3, 1))
                 delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1))
@@ -270,7 +283,7 @@ class PoseEstimator():
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
                 num_coarse_epochs = 0  # 3000
-                num_epochs = 2000  # 1000
+                num_epochs = 1000  # 1000
                 downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,
@@ -420,25 +433,29 @@ class PoseEstimator():
                     optimizer_delta_q.zero_grad()
                     optimizer_delta_t.zero_grad()
 
-                    # Get current depth map
-                    groundtruth_T_pointcloud_camera = torch.tensor(
-                        groundtruth_T_pointcloud_camera)
-                    visible_points = lidar_measurement.lidar_points_visible(
-                        lidar_measurement.point_cloud,
-                        groundtruth_T_pointcloud_camera.squeeze(0),
-                        resized_camera_info.camera_intrinsics,
-                        (resized_camera_info.camera_width, resized_camera_info.camera_height))
 
-                    depth_map = torch.full(
-                        (resized_camera_info.camera_height, resized_camera_info.camera_width), -1.0, device="cuda")
+                    # DEBUG
+                    try:
+                        # Get current depth map
+                        groundtruth_T_pointcloud_camera = torch.tensor(
+                            groundtruth_T_pointcloud_camera)
+                        visible_points = lidar_measurement.lidar_points_visible(
+                            lidar_measurement.point_cloud,
+                            groundtruth_T_pointcloud_camera.squeeze(0),
+                            resized_camera_info.camera_intrinsics,
+                            (resized_camera_info.camera_width, resized_camera_info.camera_height))
+                        depth_map = torch.full(
+                            (resized_camera_info.camera_height, resized_camera_info.camera_width), -1.0, device="cuda")
 
-                    depth_map = lidar_measurement.lidar_points_to_camera(
-                        visible_points,
-                        groundtruth_T_pointcloud_camera,
-                        resized_camera_info.camera_intrinsics,
-                        (resized_camera_info.camera_width,
-                            resized_camera_info.camera_height)
-                    )
+                        depth_map = lidar_measurement.lidar_points_to_camera(
+                            visible_points,
+                            groundtruth_T_pointcloud_camera,
+                            resized_camera_info.camera_intrinsics,
+                            (resized_camera_info.camera_width,
+                                resized_camera_info.camera_height)
+                        )
+                    except:
+                        pass
 
                     # DEBUG =======================
                     depth_map = resized_depth_image
@@ -454,8 +471,6 @@ class PoseEstimator():
                             point_invalid_mask=self.scene.point_invalid_mask,
                             point_object_id=self.scene.point_object_id,
                             delta=delta_tensor,
-                            # initial_q=current_q_numpy_array,
-                            # initial_t=current_t_numpy_array,
                             initial_q=initial_q_numpy,
                             initial_t=initial_t_numpy,
                             camera_info=resized_camera_info,
@@ -485,9 +500,7 @@ class PoseEstimator():
                     if len(masked_difference) == 0:
                         L_DEPTH = torch.tensor(0)
 
-                    # DEBUG
-                    # L = L1 + 0.1 * L_DEPTH
-                    L = L_DEPTH
+                    L = L1 + 0.1 * L_DEPTH
 
                     L.backward()
 
@@ -539,6 +552,12 @@ class PoseEstimator():
                             np.savetxt(os.path.join(
                                 self.output_path, f'epochs_delta_{count-1}/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
 
+                delta_tensor = torch.cat(
+                    (delta_tensor_q, delta_tensor_t), axis=0)
+                current_pose = initial_pose.retract(
+                            delta_tensor.clone().detach().cpu().numpy(), epsilon=epsilon)
+                optimized_poses_lie[count,:] = current_pose.to_tangent().reshape(1,6)
+                
                 errors_t_current_pic = np.array(errors_t_current_pic)
                 errors_t_current_pic = errors_t_current_pic.reshape(
                     (num_epochs + num_coarse_epochs, 3))
@@ -598,37 +617,27 @@ class PoseEstimator():
                 os.path.join(self.output_path, "trasl_error.png"))
             plt.clf()
 
-            plt.plot(errors_q_mean[500:])
-            plt.xlabel("Epoch")
-            plt.ylabel("Error")
-            plt.title("Rotational error")
-            plt.savefig(
-                os.path.join(self.output_path, "rot_error_hq.png"))
-            plt.clf()
+            # Save groundtruth and estimate
+            np.save(os.path.join(self.output_path, "optimized_poses_lie.out"), optimized_poses_lie)
+            np.save(os.path.join(self.output_path, "groundtruth_poses_lie.out"), groundtruth_poses_lie)
 
-            plt.plot(errors_t_mean[500:])
-            plt.xlabel("Epoch")
-            plt.ylabel("Error")
-            plt.title("Translational error")
-            plt.savefig(
-                os.path.join(self.output_path, "trasl_error_hq.png"))
-            plt.clf()
+def main():
+    parser = argparse.ArgumentParser(description='Parquet file path')
+    parser.add_argument('--parquet_path', type=str, help='Parquet file path')
+    # parser.add_argument('--images-path', type=str, help='Images file path')
+    parser.add_argument('--json_file_path', type=str,
+                        help='Json trajectory file path')
+    parser.add_argument('--output_path', type=str, help='Output folder path')
+    args = parser.parse_args()
 
+    print("Opening parquet file ", args.parquet_path)
+    parquet_path_list = args.parquet_path
+    ti.init(arch=ti.cuda, device_memory_GB=4, kernel_profiler=True)
+    visualizer = PoseEstimator(args.output_path, config=PoseEstimator.PoseEstimatorConfig(
+        parquet_path=parquet_path_list,
+        json_file_path=args.json_file_path
+    ))
+    visualizer.start()
 
-parser = argparse.ArgumentParser(description='Parquet file path')
-parser.add_argument('--parquet_path', type=str, help='Parquet file path')
-# parser.add_argument('--images-path', type=str, help='Images file path')
-parser.add_argument('--json_file_path', type=str,
-                    help='Json trajectory file path')
-parser.add_argument('--output_path', type=str, help='Output folder path')
-
-args = parser.parse_args()
-
-print("Opening parquet file ", args.parquet_path)
-parquet_path_list = args.parquet_path
-ti.init(arch=ti.cuda, device_memory_GB=4, kernel_profiler=True)
-visualizer = PoseEstimator(args.output_path, config=PoseEstimator.PoseEstimatorConfig(
-    parquet_path=parquet_path_list,
-    json_file_path=args.json_file_path
-))
-visualizer.start()
+if __name__ == '__main__':
+    main()
