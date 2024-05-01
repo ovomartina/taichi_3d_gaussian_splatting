@@ -5,10 +5,17 @@ import pylab as pl
 import pickle
 import numpy as np
 import sym
-from continuous_trajectory import evaluate_spline_bases
+
 import plotCoordinateFrame
 import curve_evaluation
-output_folder = "scripts/3dgs_playground_output_continuous"
+import continuous_trajectory
+
+from scipy.interpolate import make_interp_spline
+from scipy.interpolate import BSpline
+
+
+
+output_folder = "scripts/3dgs_playground_output_discrete_to_continuous_working"
 groundtruth_trajectory_path = "scripts/data/val_path.obj"
 groundtruth_poses_lie = np.load(os.path.join(
     output_folder, "groundtruth_poses_lie.out.npy"))
@@ -18,30 +25,19 @@ optimized_poses_lie = np.load(os.path.join(
 f1 = pl.figure(1)
 a3d = f1.add_subplot(111, projection='3d')
 
+N = 5
 
-N = 4
 num_segments = (optimized_poses_lie.shape[0]//N)
-reconstruction_bases = np.zeros((4+(num_segments-1), 6))
-print("Num segments:",num_segments)
-# Sliding window to evaluate bases
-for i in range(0, num_segments):
-    current_poses = optimized_poses_lie[i*N:(i*N)+N, :]
-    print(current_poses)
-    print(f"{i}:{(i+4)}")
-    bases = evaluate_spline_bases(current_poses)
-    if i == 0:
-        reconstruction_bases[i:i+4, :] = bases
-    else:
-        print(f"{(i*4)-3}:{(i*4)+1}")
-        reconstruction_bases[i:i+4, :] = bases
-    print("Bases:", bases)
+reconstruction_bases = np.zeros((4*num_segments, 6))
+# reconstruction_bases = np.zeros((4+(num_segments-1), 6))
+print("optimized_poses_lie shape:", optimized_poses_lie)
+print("Num segments:", num_segments)
 
-# reconstruction_bases = curve_evaluation.moving_window_bases_evaluation(optimized_poses_lie, N)
+last_pose = None
+previous_bases = None
+count = 0
+reconstruction_bases = curve_evaluation.evaluate_spline_bases_lsq(optimized_poses_lie, N)
 
-# optimized_poses = [sym.Pose3.from_tangent(optimized_poses_lie[i]) for i in range(optimized_poses_lie.shape[0])]
-# poses = np.array([[ *optimized_poses[i].position(), *optimized_poses[i].rotation().data[:]] for i in range(len(optimized_poses))])
-
-# reconstruction_bases = reconstruction_bases[0:4,:]
 optimized_poses = [sym.Pose3.from_tangent(
     reconstruction_bases[i]) for i in range(reconstruction_bases.shape[0])]
 poses = np.array([[*optimized_poses[i].position(), *optimized_poses[i].rotation().data[:]]
@@ -60,12 +56,16 @@ a3d.scatter(optimized_poses_lie[:, 3], optimized_poses_lie[:, 4],
 a3d.scatter(reconstruction_bases[:, 3], reconstruction_bases[:, 4],
             reconstruction_bases[:, 5], color="green", s=5, label="Reconstructed bases")
 
-print("Reconstruction bases:", reconstruction_bases.shape[0])
-print("num segments:", num_segments)
-for i in range(0, reconstruction_bases.shape[0]-3):
-    print(f"{i}:{i+4}")
+for i in range(0, num_segments):
     plotCoordinateFrame.plot_trajectory(
-        a3d, reconstruction_bases[i:i+4, 3:], color="black", linewidth=1, resolution=0.1, label="estimation")
+        a3d, reconstruction_bases[i:i+4, 3:], color="black", linewidth=1, resolution=0.001, label="estimation")
+    time = np.array(range(0,10,1))
+    time = 0.1*time
+
+    for t in time:
+        delta_pose = continuous_trajectory.interpolate_bspline(t, reconstruction_bases[i:i+4, :])
+        plotCoordinateFrame.plotCoordinateFrame(a3d, sym.Pose3.from_tangent(delta_pose).to_homogenous_matrix(),linewidth=0.1)
+    # plotCoordinateFrame.plot_trajectory_lie(a3d,reconstruction_bases[i:i+4, :],  linewidth=0.1, resolution=0.01)
 # Plot groundtruth continuous time trajectory
 
 # poses_groundtruth = pp.se3(groundtruth_poses_lie)
@@ -84,6 +84,8 @@ a3d.plot(wayposes.tensor()[:, 0], wayposes.tensor()[:, 1],
          wayposes.tensor()[:, 2], color="red", label="Groundtruth path")
 a3d.scatter(groundtruth_poses_lie[:, 3], groundtruth_poses_lie[:, 4],
             groundtruth_poses_lie[:, 5], color="red", s=5, label="Groundtruth path")
+for groundtruth_pose in groundtruth_poses_lie:
+    plotCoordinateFrame.plotCoordinateFrame(a3d, sym.Pose3.from_tangent(groundtruth_pose).to_homogenous_matrix(),linewidth=1)
 
 # # Sanity check: load and plot trajectory
 # with open(groundtruth_trajectory_path, 'r') as obj_file:

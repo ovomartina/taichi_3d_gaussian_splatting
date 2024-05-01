@@ -1,10 +1,15 @@
 import numpy
 
 import sym
+from math import factorial
+
 
 M = (1/6)*numpy.array([[5, 3, -3, 1],
                        [1, 3, 3, -2],
                        [0, 0, 0, 1]])
+M_z = numpy.array([[2, 1, -2, 1],
+                        [0, 1, 3, -2],
+                        [0, 0, -1, 1]])/factorial(2)
 _EPS = 1e-6
 
 
@@ -58,7 +63,7 @@ def plotCoordinateFrame(axis, T_0f, size=1, linewidth=3, name=None):
         axis.text(X[0, 0], X[0, 1], X[0, 2], name, zdir='x')
 
 
-def plot_trajectory(axis, bases, resolution=0.01, size=1, linewidth=3, name=None, color="blue", label=None):  # bases: 4x3
+def plot_trajectory(axis, bases, resolution=0.01, size=1, linewidth=3, name=None, color="blue", label=None, evaluate_zspline=False):  # bases: 4x3
     """Plot the 3d trajectory given the spline bases as a line
 
     Returns:
@@ -69,9 +74,13 @@ def plot_trajectory(axis, bases, resolution=0.01, size=1, linewidth=3, name=None
     # Define the 3d location at each step
     positions = numpy.zeros((len(time_range), 3))  # samplesx3
 
+    
     for i, step in enumerate(time_range):
         tt = numpy.power(step, numpy.arange(0, 4))
-        w = numpy.matmul(M, tt)
+        if evaluate_zspline:
+            w = numpy.matmul(M_z, tt)
+        else:
+            w = numpy.matmul(M, tt)
         delta_position = bases[0, :] + w[0]*(bases[1, :] - bases[0, :]) + w[1]*(
             bases[2, :] - bases[1, :]) + w[2]*(bases[3, :]-bases[2, :])
         delta_position = numpy.expand_dims(delta_position, axis=1)
@@ -80,13 +89,16 @@ def plot_trajectory(axis, bases, resolution=0.01, size=1, linewidth=3, name=None
               color=color, linewidth=linewidth, label=label)
 
 
-def plot_trajectory_2d(axis, bases, resolution=0.01, size=1, linewidth=3, name=None, color="blue", label=None):
+def plot_trajectory_2d(axis, bases, resolution=0.01, size=1, linewidth=3, name=None, color="blue", label=None,evaluate_zspline=False):
     time_range = numpy.arange(0, 1, resolution)
 
     positions = numpy.zeros((len(time_range), 3))  # samplesx3
     for i, step in enumerate(time_range):
         tt = numpy.power(step, numpy.arange(0, 4))
-        w = numpy.matmul(M, tt)
+        if evaluate_zspline:
+            w = numpy.matmul(M_z, tt)
+        else:
+            w = numpy.matmul(M, tt)
         delta_position = bases[0, :] + w[0]*(bases[1, :] - bases[0, :]) + w[1]*(
             bases[2, :] - bases[1, :]) + w[2]*(bases[3, :]-bases[2, :])
         # delta_position = bases[0] + w[0]*(sym.Pose3.from_tangent(bases[1, :]).local_coordinates(sym.Pose3.from_tangent(bases[0, :]))) + \

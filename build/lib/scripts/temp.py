@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-folder = "3dgs_playground_output_2000_fine"
+folder = "3dgs_playground_output"
 dirs = os.listdir(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}")
 print(dirs)
 
@@ -19,10 +19,10 @@ for dir in dirs:
         if epoch > -1:
             file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_q.out")
-            err_q = np.loadtxt(file_path, delimiter=",").reshape(2000, 1)
+            err_q = np.loadtxt(file_path, delimiter=",").reshape(1000, 1)
             file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_t.out")
-            err_t = np.loadtxt(file_path, delimiter=",").reshape(2000, 3)
+            err_t = np.loadtxt(file_path, delimiter=",").reshape(1000, 3)
             if (not np.isnan(err_q).any()) and (not np.isnan(err_t).any()):
                 errors_q.append(err_q)
                 errors_t.append(err_t)

@@ -158,7 +158,7 @@ class PoseEstimator():
             for count, view in enumerate(d):
                 print(
                     f"=================Image {count}========================")
-                # if count % 8 != 0:
+                # if count <48:
                 #     continue
 
                 # Load groundtruth image
@@ -211,7 +211,7 @@ class PoseEstimator():
                 if not os.path.exists(os.path.join(self.output_path, f'groundtruth/')):
                     os.makedirs(os.path.join(self.output_path, 'groundtruth/'))
                 im.save(os.path.join(self.output_path,
-                        f'groundtruth/groundtruth_{count-1}.png'))
+                        f'groundtruth/groundtruth_{count}.png'))
 
                 # Get lidar file if available
                 # DEBUG
@@ -243,7 +243,7 @@ class PoseEstimator():
 
                 groundtruth_poses_lie[count, :] = pose_groundtruth.to_tangent()
 
-                delta_numpy_array_q = np.random.normal(0, 0.02, (3, 1))
+                delta_numpy_array_q = np.random.normal(0, 0.05, (3, 1))
                 delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1))
                 delta_numpy_array = np.vstack(
                     (delta_numpy_array_q, delta_numpy_array_t))
@@ -283,7 +283,7 @@ class PoseEstimator():
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
                 num_coarse_epochs = 0  # 3000
-                num_epochs = 1000  # 1000
+                num_epochs = 2000  # 1000
                 downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,
@@ -296,7 +296,7 @@ class PoseEstimator():
                 im = PIL.Image.fromarray(
                     (ground_truth_image_downsampled_numpy.transpose(1, 2, 0)*255).astype(np.uint8))
                 im.save(os.path.join(self.output_path,
-                        f'groundtruth/groundtruth_{count-1}_coarse.png'))
+                        f'groundtruth/groundtruth_{count}_coarse.png'))
 
                 for epoch in range(num_coarse_epochs):
                     # Set the gradient to zero
@@ -383,11 +383,11 @@ class PoseEstimator():
                         image_np = predicted_image.clone().detach().cpu().numpy()
                         im = PIL.Image.fromarray(
                             (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
-                        if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count-1}/')):
+                        if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count}/')):
                             os.makedirs(os.path.join(
-                                self.output_path, f'epochs_delta_{count-1}/'))
+                                self.output_path, f'epochs_delta_{count}/'))
                         im.save(os.path.join(self.output_path,
-                                             f'epochs_delta_{count-1}/coarse_{epoch}.png'))
+                                             f'epochs_delta_{count}/coarse_{epoch}.png'))
 
                 epsilon = 0.0001
                 delta_tensor = torch.cat(
@@ -481,6 +481,7 @@ class PoseEstimator():
                     predicted_image = torch.clamp(
                         predicted_image, min=0, max=1)
                     predicted_image = predicted_image.permute(2, 0, 1)
+                    
 
                     predicted_depth = predicted_depth.cuda()
                     predicted_depth = predicted_depth / \
@@ -542,15 +543,15 @@ class PoseEstimator():
 
                             im = PIL.Image.fromarray(
                                 (image_np.transpose(1, 2, 0)*255).astype(np.uint8))
-                            if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count-1}/')):
+                            if not os.path.exists(os.path.join(self.output_path, f'epochs_delta_{count}/')):
                                 os.makedirs(os.path.join(
-                                    self.output_path, f'epochs_delta_{count-1}/'))
+                                    self.output_path, f'epochs_delta_{count}/'))
                             im.save(os.path.join(self.output_path,
-                                    f'epochs_delta_{count-1}/epoch_{epoch}.png'))
+                                    f'epochs_delta_{count}/epoch_{epoch}.png'))
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs_delta_{count-1}/epoch_{epoch}_q.txt'), current_q.cpu().detach().numpy())
+                                self.output_path, f'epochs_delta_{count}/epoch_{epoch}_q.txt'), current_q.cpu().detach().numpy())
                             np.savetxt(os.path.join(
-                                self.output_path, f'epochs_delta_{count-1}/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
+                                self.output_path, f'epochs_delta_{count}/epoch_{epoch}_t.txt'), current_t.cpu().detach().numpy())
 
                 delta_tensor = torch.cat(
                     (delta_tensor_q, delta_tensor_t), axis=0)
@@ -573,7 +574,7 @@ class PoseEstimator():
                 plt.title("Rotational error")
                 plt.legend()
                 plt.savefig(os.path.join(
-                    self.output_path, f'epochs_delta_{count-1}/rot_error.png'))
+                    self.output_path, f'epochs_delta_{count}/rot_error.png'))
                 plt.clf()
 
                 plt.plot(errors_t_current_pic[:, 0], color='red', label='x')
@@ -584,13 +585,13 @@ class PoseEstimator():
                 plt.title("Translational error")
                 plt.legend()
                 plt.savefig(os.path.join(
-                    self.output_path, f'epochs_delta_{count-1}/trasl_error.png'))
+                    self.output_path, f'epochs_delta_{count}/trasl_error.png'))
                 plt.clf()
 
                 np.savetxt(os.path.join(
-                    self.output_path, f'epochs_delta_{count-1}/error_q.out'), errors_q_current_pic, delimiter=',')
+                    self.output_path, f'epochs_delta_{count}/error_q.out'), errors_q_current_pic, delimiter=',')
                 np.savetxt(os.path.join(
-                    self.output_path, f'epochs_delta_{count-1}/error_t.out'), errors_t_current_pic, delimiter=',')
+                    self.output_path, f'epochs_delta_{count}/error_t.out'), errors_t_current_pic, delimiter=',')
 
             errors_q_numpy = np.array(errors_q)
             errors_t_numpy = np.array(errors_t)

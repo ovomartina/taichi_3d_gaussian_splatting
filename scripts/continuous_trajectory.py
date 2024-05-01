@@ -27,6 +27,7 @@ from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation
 from taichi_3d_gaussian_splatting.GaussianPointTrainer import GaussianPointCloudTrainer
 
 import plotCoordinateFrame
+import curve_evaluation
 
 # DEBUG - allow reproducibility
 torch.manual_seed(42)
@@ -54,10 +55,11 @@ def quaternion_multiply_numpy(
     return torch.stack([x, y, z, w], dim=-1)
 
 
-def interpolate_bspline(time: float, bases: torch.Tensor) -> torch.Tensor:
+def interpolate_bspline(time: float, bases) -> torch.Tensor:
     tt = torch.pow(time, torch.arange(0, 4, device="cuda"))
     w = torch.matmul(M, tt)
-
+    if isinstance(bases, (np.ndarray)):
+        w = w.detach().clone().cpu().numpy()
     delta_pose = bases[0] + w[0]*(bases[1, :] - bases[0, :]) + w[1]*(
         bases[2, :] - bases[1, :]) + w[2]*(bases[3, :]-bases[2, :])
 
@@ -131,6 +133,7 @@ class PoseEstimator():
     def __init__(self, output_path, config) -> None:
         self.config = config
         self.output_path = output_path
+        self.output_path="scripts/continuous_trajectory_output_q_t_perturbed_z_spline"
         self.config.image_height = self.config.image_height - self.config.image_height % 16
         self.config.image_width = self.config.image_width - self.config.image_width % 16
 
@@ -196,12 +199,14 @@ class PoseEstimator():
             d = json.load(f)
 
             total_images = len(d)
-            batch_size = 10  # Depends on how many measurements in time - straightness of trajectory
+            batch_size = 5  # Depends on how many measurements in time - straightness of trajectory
 
             num_batches = total_images//batch_size
             if total_images % batch_size != 0:
                 print("Discarding images")
-
+            switch = 200
+            optimize_q = True
+            start_t_optimization=False
             # Batch images
             for i in range(num_batches):
                 if i > 0:
@@ -289,21 +294,48 @@ class PoseEstimator():
                 #      for k in range(batch_size)]
                 # ))
 
-                groundtruth_bases = evaluate_spline_bases(np.array(
+                # groundtruth_bases = evaluate_spline_bases(np.array(
+                #     [groundtruth_pose[k].to_tangent(
+                #         _EPS) for k in range(batch_size)]
+                # ))
+
+                groundtruth_bases = curve_evaluation.evaluate_z_spline_bases(np.array(
                     [groundtruth_pose[k].to_tangent(
                         _EPS) for k in range(batch_size)]
                 ))
-                
-                perturbed_bases = groundtruth_bases + np.random.normal(loc=0, scale=0.02, size=(4,6))
-                
+
+                # DEBUG only perturb t
+                perturbed_bases = groundtruth_bases + \
+                    np.random.normal(
+                        loc=0, scale=0.05, size=(4, 6))
+
                 print(f"perturbed_bases shape: {perturbed_bases.shape} \n \
                     groundtruth_bases shape: {groundtruth_bases.shape}")
 
                 bspline_bases = torch.tensor(perturbed_bases).reshape(
                     (4, 6)).cuda()  # 4 bases represented by Vec6
-                # DEBUG
-                # bspline_bases.requires_grad_()
-                delta_spline_bases = torch.zeros((4,6), device="cuda", requires_grad=True)
+
+                # DEBUG - set bspine bases as pypose lietensor (pose, angle)
+                pypose_bspline_knots = torch.zeros((4, 7))
+                for base_number, base in enumerate(bspline_bases):
+                    base_lie = sym.Pose3.from_tangent(base)
+                    pypose_bspline_knots[base_number, :] = torch.hstack((torch.tensor([
+                        base_lie.position()]).to(torch.float32), torch.tensor([
+                            base_lie.rotation().data[:]]).to(torch.float32)))
+
+                pypose_groundtruth_bspline_knots = torch.zeros((4, 7))
+                for base_number, base in enumerate(groundtruth_bases):
+                    base_lie = sym.Pose3.from_tangent(base)
+                    pypose_groundtruth_bspline_knots[base_number, :] = torch.hstack((torch.tensor([
+                        base_lie.position()]).to(torch.float32), torch.tensor([
+                            base_lie.rotation().data[:]]).to(torch.float32)))
+
+                # pypose_bspline_knots.requires_grad_()
+                pypose_bspline_knots_t = pypose_bspline_knots[:, :3]
+                pypose_bspline_knots_q = pypose_bspline_knots[:, 3:]
+
+                pypose_bspline_knots_t.requires_grad_()
+                pypose_bspline_knots_q.requires_grad_()
                 self.rasteriser = GaussianPointCloudContinuousPoseRasterisation(
                     config=GaussianPointCloudContinuousPoseRasterisation.GaussianPointCloudContinuousPoseRasterisationConfig(
                         near_plane=0.001,
@@ -314,68 +346,93 @@ class PoseEstimator():
 
                 # Optimization starts
                 # DEBUG
-                optimizer_bspline_bases = torch.optim.Adam(
-                    [delta_spline_bases], lr=1e-3, betas=(0.9, 0.999))
-                scheduler = torch.optim.lr_scheduler.ExponentialLR(
-                    optimizer=optimizer_bspline_bases, gamma=0.9947)
+                # optimizer_bspline_bases = torch.optim.Adam(
+                #     [pypose_bspline_knots], lr=1e-4, betas=(0.9, 0.999))
 
-                num_epochs = 5000
+                optimizer_bspline_bases_t = torch.optim.Adam(
+                    [pypose_bspline_knots_t], lr=1e-3, betas=(0.9, 0.999))
+                optimizer_bspline_bases_q = torch.optim.Adam(
+                    [pypose_bspline_knots_q], lr=1e-4, betas=(0.9, 0.999))
+
+                # scheduler = torch.optim.lr_scheduler.ExponentialLR(
+                #     optimizer=optimizer_bspline_bases, gamma=0.9947)
+                scheduler_q = torch.optim.lr_scheduler.ExponentialLR(
+                    optimizer=optimizer_bspline_bases_q, gamma=0.9947)
+                scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
+                    optimizer=optimizer_bspline_bases_t, gamma=0.9947)
+
+                num_epochs = 1500
 
                 errors_t = np.zeros((batch_size, num_epochs))
                 errors_q = np.zeros((batch_size, num_epochs))
                 error_bases_q = np.zeros((4, num_epochs))
                 error_bases_t = np.zeros((4, num_epochs))
-                current_bases = torch.zeros((4, 6))
-                # Pose refinement
+
                 for epoch in range(num_epochs):
 
                     # Cumulate gradients from all images in segment
-                    #L1 = 0
+                    # L1 = 0
                     for i, view_dict in enumerate(view):
                         # Set the gradient to zero
-                        optimizer_bspline_bases.zero_grad()
+                        # optimizer_bspline_bases.zero_grad()
+                        optimizer_bspline_bases_q.zero_grad()
+                        optimizer_bspline_bases_t.zero_grad()
+
                         current_t = i / batch_size  # Since I assume measurements equally spaced in time
+
+                        pypose_bspline_knots = torch.hstack(
+                            (pypose_bspline_knots_t, pypose_bspline_knots_q))
+                        pypose_bspline_knots.requires_grad_()
+                        pypose_bspline_knots.retain_grad()
+
+
+                        current_pose_tensor = curve_evaluation.cubic_bspline_interpolation(
+                            pp.SE3(torch.hstack((pypose_bspline_knots_t, pypose_bspline_knots_q))), torch.tensor([current_t]),enable_eps=False,enable_z_spline=True)
                         
+                        # current_pose_tensor = curve_evaluation.bspline(
+                        #     pp.SE3(torch.hstack((pypose_bspline_knots_t, pypose_bspline_knots_q)).unsqueeze(0)), torch.tensor([current_t],device="cpu"),enable_z_spline=True).squeeze(0)
+                        
+                        current_pose_tensor = current_pose_tensor.cuda()
+                        current_pose_tensor.requires_grad_()
+                        current_pose_tensor.retain_grad()
+                        current_pose = current_pose_tensor.clone().detach().cpu().numpy()
+
                         # Plot pose error
                         with torch.no_grad():
-                            # DEBUG
-                            for nbase, base in enumerate(bspline_bases):
-                                current_bases[nbase,:]= torch.tensor(sym.Pose3.from_tangent(base).retract(delta_spline_bases[nbase,:]).to_tangent())
-                            current_bases = current_bases.cuda()
-                            # pose = interpolate_bspline(
-                            #     current_t, bspline_bases)
-                            pose = interpolate_bspline(
-                                current_t, current_bases)
-                            gt_pose = interpolate_bspline(
-                                current_t, torch.tensor(groundtruth_bases, device="cuda"))
-                            pose = sym.Pose3.from_tangent(pose)
-                            gt_pose = sym.Pose3.from_tangent(gt_pose)
+                            gt_pose = curve_evaluation.cubic_bspline_interpolation(
+                                pp.SE3(pypose_groundtruth_bspline_knots), torch.tensor([current_t]),enable_eps=False,enable_z_spline=True)
+                            
+                            # gt_pose = curve_evaluation.bspline(
+                            #     pp.SE3(pypose_groundtruth_bspline_knots.unsqueeze(0)), torch.tensor([current_t],device="cpu"),enable_z_spline=True).squeeze(0)
+                            
                             errors_t[i, epoch] = np.linalg.norm(
-                                np.array(pose.position()) - np.array(gt_pose.position()))
+                                np.array(current_pose[0, :3]) - np.array(gt_pose[0, :3]))
                             errors_q[i, epoch] = quaternion_difference_rad(torch.tensor(
-                                [pose.rotation().data[:]]).to(torch.float32), torch.tensor(
-                                [gt_pose.rotation().data[:]]).to(torch.float32))
+                                current_pose[0, 3:]), torch.tensor(gt_pose[0, 3:]))
 
-                            for i in range(4):
-                                #DEBUG
-                                # bspline_bases_numpy = bspline_bases.clone().detach().cpu().numpy()
-                                bspline_bases_numpy=current_bases.clone().detach().cpu().numpy()
-                                error_q, error_t = pose_error(
-                                    groundtruth_bases[i, :], bspline_bases_numpy[i, :])
-                                error_bases_q[i, epoch] = error_q
-                                error_bases_t[i, epoch] = error_t
+                            # print(f"Error t: \n\t {errors_t[i,epoch]}\nError q: \n\t{errors_q[i,epoch]}")
 
-                        #Initial bases, current bases?
+                            if np.isnan(errors_t[i, epoch]):
+                                print(current_pose[0, :3])
+                                print(pypose_groundtruth_bspline_knots)
+
+                            for j in range(4):
+                                # DEBUG
+                                error_t = np.linalg.norm(
+                                    np.array(pypose_bspline_knots[j, :3]) - np.array(pypose_groundtruth_bspline_knots[j, :3]))
+                                error_q = quaternion_difference_rad(torch.tensor(pypose_bspline_knots[j, 3:]), torch.tensor(
+                                    pypose_groundtruth_bspline_knots[j, 3:]))
+                                error_bases_q[j, epoch] = error_q
+                                error_bases_t[j, epoch] = error_t
+
                         predicted_image, predicted_depth, _, _ = self.rasteriser(
                             GaussianPointCloudContinuousPoseRasterisation.GaussianPointCloudContinuousPoseRasterisationInput(
                                 point_cloud=self.scene.point_cloud,
                                 point_cloud_features=self.scene.point_cloud_features,
                                 point_invalid_mask=self.scene.point_invalid_mask,
                                 point_object_id=self.scene.point_object_id,
-                                bases=bspline_bases,
-                                delta=delta_spline_bases,
-                                time=current_t,
                                 camera_info=resized_camera_info,
+                                current_pose=current_pose_tensor,
                                 color_max_sh_band=3,
                             )
                         )
@@ -396,21 +453,88 @@ class PoseEstimator():
 
                         # sum over all images
                         L1 = 0.8*torch.abs(predicted_image_temp - ground_truth_image_temp).mean() + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
-                                                                                                         data_range=1, size_average=True))
-                        L = L1
-                        L.backward()
+                                                                                                                  data_range=1, size_average=True))
 
-                        if (not torch.isnan(delta_spline_bases.grad).any()):
-                            optimizer_bspline_bases.step()
+                        L1.backward(retain_graph=True)   #
+                        # gradient = torch.autograd.grad(outputs=[current_pose_tensor], inputs=[
+                        #                                 pypose_bspline_knots],grad_outputs=current_pose_tensor.grad)#, retain_graph=True)#torch.ones_like(current_pose_tensor)
 
-                        if epoch % 20 == 0:
-                            scheduler.step()
-                            for param_group in optimizer_bspline_bases.param_groups:
-                                if param_group['lr'] < 1e-5:
-                                    param_group['lr'] = 1e-5
+                        # dL1_d_pypose_knots = torch.autograd.grad(outputs=[current_pose_tensor], inputs=[
+                        #                                pypose_bspline_knots],grad_outputs=current_pose_tensor.grad, retain_graph=True)#torch.ones_like(current_pose_tensor)
+                        # pypose_bspline_knots.grad = dL1_d_pypose_knots[0]
+                        
+                        # DEBUG
+                        if start_t_optimization:
+                            dL1_d_pypose_knots_t = torch.autograd.grad(outputs=[current_pose_tensor], inputs=[
+                                pypose_bspline_knots_t], grad_outputs=current_pose_tensor.grad,retain_graph=True)
+                        # current_pose_tensor.grad.detach_()
+                        else:
+                            dL1_d_pypose_knots_q = torch.autograd.grad(outputs=[current_pose_tensor], inputs=[
+                                pypose_bspline_knots_q], grad_outputs=current_pose_tensor.grad,retain_graph=True)
+
+                        if start_t_optimization:
+                            if (dL1_d_pypose_knots_t) is not None:
+                                # if (gradient) is not None:
+                                # optimizer_bspline_bases.zero_grad()
+                                # optimizer_bspline_bases_t.zero_grad()
+                                # optimizer_bspline_bases_q.zero_grad()
+
+                                pypose_bspline_knots_t.grad = dL1_d_pypose_knots_t[0]
+
+                                if (not torch.isnan(pypose_bspline_knots_t.grad).any()):
+                                    if (not torch.isinf(pypose_bspline_knots_t.grad).any()):
+                                        optimizer_bspline_bases_t.step()
+                                        optimizer_bspline_bases_t.zero_grad()
+                                    
+                        if (dL1_d_pypose_knots_q) is not None:
+                            pypose_bspline_knots_q.grad = dL1_d_pypose_knots_q[0]
+                            # pypose_bspline_knots.grad = gradient[0]
+
+                            # if (not torch.isnan(pypose_bspline_knots.grad).any()):
+                            #     if (not torch.isinf(pypose_bspline_knots.grad).any()):
+                            #         optimizer_bspline_bases.step()
+                            #         optimizer_bspline_bases.zero_grad()
+                            #     else:
+                            #         print(pypose_bspline_knots.grad)
+                            #         print("inf detected")
+                            
+                            if not start_t_optimization:
+                                if (not torch.isnan(pypose_bspline_knots_q.grad).any()):
+                                    if (not torch.isinf(pypose_bspline_knots_q.grad).any()):
+                                        optimizer_bspline_bases_q.step()
+                                        optimizer_bspline_bases_q.zero_grad()
+                        
+                                    
+                    if epoch % 100 == 0 and start_t_optimization:
+                        # scheduler.step()
+                        scheduler_t.step()
+                        # scheduler_q.step()
+
+                        # for param_group in optimizer_bspline_bases.param_groups:
+                        #     if param_group['lr'] < 1e-8:
+                        #         param_group['lr'] = 1e-8
+                        #         print("1e-8")
+                        for param_group in optimizer_bspline_bases_t.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+                                #print("1e-6")
+                        # for param_group in optimizer_bspline_bases_q.param_groups:
+                        #     if param_group['lr'] < 1e-6:
+                        #         param_group['lr'] = 1e-6
+                        #         print("1e-6")
+                    if epoch % 100== 0:
+                        # scheduler.step()
+                        scheduler_q.step()
+                        for param_group in optimizer_bspline_bases_q.param_groups:
+                            if param_group['lr'] < 1e-5:
+                                param_group['lr'] = 1e-5
+                    if epoch>1000:
+                        start_t_optimization=True
+                            
 
                     if epoch % 100 == 0:
-                        print(f"Current photometric loss: {L}")
+                        print(f"Current photometric loss: {L1}")
+
                         # DEBUG visualization ===========================
                         temp_data = []
 
@@ -433,77 +557,92 @@ class PoseEstimator():
                         a2d_bases = f3.add_subplot(111)
                         f4 = pl.figure(4)
                         a2d_bases_t = f4.add_subplot(111)
-                        
+
                         a3d.set_xlabel('X')
                         a3d.set_ylabel('Y')
                         a3d.set_zlabel('Z')
 
                         # Plot current trajectory guess
                         with torch.no_grad():
-                            for nbase, base in enumerate(bspline_bases):
-                                current_bases[nbase,:]= torch.tensor(sym.Pose3.from_tangent(base).retract(delta_spline_bases[nbase,:]).to_tangent())
-                            bspline_bases_numpy = current_bases.clone().detach().cpu().numpy()
+                            pypose_bspline_knots = torch.hstack(
+                            (pypose_bspline_knots_t, pypose_bspline_knots_q))
                             plotCoordinateFrame.plot_trajectory(
-                                a3d, bspline_bases_numpy[:, 3:], color="black", linewidth=1, label="estimation")
+                                a3d, pypose_bspline_knots[:, :3], color="black", linewidth=1, label="estimation",evaluate_zspline=True)
                             plotCoordinateFrame.plot_trajectory_2d(
-                                a2d, bspline_bases_numpy[:, 3:], color="black", linewidth=1, label="estimation")
+                                a2d, pypose_bspline_knots[:, :3], color="black", linewidth=1, label="estimation",evaluate_zspline=True)
 
                             for i in range(4):
-                                a2d_bases.plot(error_bases_q[i,:])
-                                a2d_bases_t.plot(error_bases_t[i,:])
-                                
+                                a2d_bases.plot(error_bases_q[i, :epoch])
+                                a2d_bases_t.plot(error_bases_t[i, :epoch])
+
                             # Plot pose error
                             t_step = 1/batch_size
                             t_range = t_step*np.arange(0, batch_size)
-                            poses = np.array([interpolate_bspline(
-                                t, current_bases).clone().detach().cpu().numpy() for t in t_range])
-                            gt_poses = np.array([interpolate_bspline(
-                                t, torch.tensor(groundtruth_bases, device="cuda")).clone().detach().cpu().numpy() for t in t_range])
+                            poses = curve_evaluation.cubic_bspline_interpolation(
+                                pp.SE3(pypose_bspline_knots.double()), torch.tensor(t_range).double(),enable_eps=False, enable_z_spline=True)
+                            gt_poses = curve_evaluation.cubic_bspline_interpolation(pp.SE3(
+                                pypose_groundtruth_bspline_knots.double()), torch.tensor(t_range).double(),enable_eps=True, enable_z_spline=True)
+                            
+                            # poses = curve_evaluation.bspline(
+                            #     pp.SE3(pypose_bspline_knots.unsqueeze(0)), torch.tensor(t_range, device="cpu"),enable_z_spline=True).squeeze(0)
+                            # gt_poses = curve_evaluation.bspline(
+                            #     pp.SE3(pypose_groundtruth_bspline_knots.unsqueeze(0)), torch.tensor(t_range, device="cpu"),enable_z_spline=True).squeeze(0)
+
                             for pose in poses:
-                                plotCoordinateFrame.plotCoordinateFrame(a2d, sym.Pose3.from_tangent(pose).to_homogenous_matrix(),size= 0.5, linewidth = 0.5)
-                                plotCoordinateFrame.plotCoordinateFrame(a3d, sym.Pose3.from_tangent(pose).to_homogenous_matrix(),size= 0.5, linewidth = 0.5)
+                                plotCoordinateFrame.plotCoordinateFrame(
+                                    a2d, pp.matrix(pose), size=0.5, linewidth=0.5)
+                                plotCoordinateFrame.plotCoordinateFrame(
+                                    a3d, pp.matrix(pose), size=0.5, linewidth=0.5)
 
                             a2d.scatter(
-                                poses[:, 3], poses[:, 4], s=5, color="black")
-                            a3d.scatter(poses[:, 3], poses[:, 4],
-                                        poses[:, 5], s=5, color="black")
+                                poses[:, 0], poses[:, 1], s=5, color="black")
+                            a3d.scatter(poses[:, 0], poses[:, 1],
+                                        poses[:, 2], s=5, color="black")
 
                             # Add scatter for reconstructed bases
-                            for bspline_base in bspline_bases_numpy:
-                                plotCoordinateFrame.plotCoordinateFrame(a2d, sym.Pose3.from_tangent(bspline_base).to_homogenous_matrix(),size= 0.5, linewidth = 0.5)
-                                plotCoordinateFrame.plotCoordinateFrame(a3d, sym.Pose3.from_tangent(bspline_base).to_homogenous_matrix(),size= 0.5, linewidth = 0.5)
+                            bspline_bases_numpy = pypose_bspline_knots.clone().detach().cpu().numpy()
+                            for bspline_base in pypose_bspline_knots:
+                                plotCoordinateFrame.plotCoordinateFrame(a2d, pp.matrix(
+                                    pp.SE3(bspline_base)), size=0.5, linewidth=0.5)
+                                plotCoordinateFrame.plotCoordinateFrame(a3d, pp.matrix(
+                                    pp.SE3(bspline_base)), size=0.5, linewidth=0.5)
 
                             a2d.scatter(
-                                bspline_bases_numpy[:, 3], bspline_bases_numpy[:, 4], s=5, color="gray")
+                                bspline_bases_numpy[:, 0], bspline_bases_numpy[:, 1], s=5, color="gray")
                             a3d.scatter(
-                                bspline_bases_numpy[:, 3], bspline_bases_numpy[:, 4], bspline_bases_numpy[:, 5], s=5, color="gray")
+                                bspline_bases_numpy[:, 0], bspline_bases_numpy[:, 1], bspline_bases_numpy[:, 2], s=5, color="gray")
 
                         # Plot groundtruth trajectory
                         # plotCoordinateFrame.plot_trajectory_lie(
                         #     a3d, groundtruth_bases, linewidth=1, resolution=0.1, size=0.2)
                         plotCoordinateFrame.plot_trajectory(
-                            a3d, groundtruth_bases[:, 3:], color="orange", linewidth=1, label="groundtruth")
+                            a3d, groundtruth_bases[:, 3:], color="orange", linewidth=1, label="groundtruth", evaluate_zspline=True)
                         plotCoordinateFrame.plot_trajectory_2d(
-                            a2d, groundtruth_bases[:, 3:], color="orange", linewidth=1, label="groundtruth")
+                            a2d, groundtruth_bases[:, 3:], color="orange", linewidth=1, label="groundtruth",evaluate_zspline=True)
 
                         groundtruth_delta = np.array(
                             [groundtruth_pose[k].to_tangent(_EPS) for k in range(batch_size)])
 
                         # Add scatter for groundtruth points
-                        a2d.scatter(gt_poses[:, 3], gt_poses[:, 4],
-                                    s=5, color="orange", label="Groundtruth discrete poses")
-                        a3d.scatter(gt_poses[:, 3], gt_poses[:, 4],
-                                    gt_poses[:, 5], s=5, color="orange", label="Groundtruth discrete poses")
+                        a2d.scatter(gt_poses[:, 0], gt_poses[:, 1],
+                                    s=5, color="orange", label="Interpolated Groundtruth discrete poses")
+                        a3d.scatter(gt_poses[:, 0], gt_poses[:, 1],
+                                    gt_poses[:, 2], s=5, color="orange", label="Interpolated Groundtruth discrete poses")
                         a2d.scatter(groundtruth_delta[:, 3], groundtruth_delta[:, 4],
                                     s=5, color="yellow", label="Groundtruth discrete poses")
                         a3d.scatter(groundtruth_delta[:, 3], groundtruth_delta[:, 4],
                                     groundtruth_delta[:, 5], s=5, color="yellow", label="Groundtruth discrete poses")
+                        for k in range(batch_size):
+                            plotCoordinateFrame.plotCoordinateFrame(
+                                a2d, groundtruth_pose[k].to_homogenous_matrix(), size=0.5, linewidth=0.5)
+                            plotCoordinateFrame.plotCoordinateFrame(
+                                a3d, groundtruth_pose[k].to_homogenous_matrix(), size=0.5, linewidth=0.5)
 
                         # Add scatter for groundtruth bases
-                        a2d.scatter(groundtruth_bases[:, 3], groundtruth_bases[:, 4],
+                        a2d.scatter(pypose_groundtruth_bspline_knots[:, 0], pypose_groundtruth_bspline_knots[:, 1],
                                     s=5, color="red", label="Groundtruth spline bases")
-                        a3d.scatter(groundtruth_bases[:, 3], groundtruth_bases[:, 4],
-                                    groundtruth_bases[:, 5], s=5, color="red", label="Groundtruth spline bases")
+                        a3d.scatter(pypose_groundtruth_bspline_knots[:, 0], pypose_groundtruth_bspline_knots[:, 1],
+                                    pypose_groundtruth_bspline_knots[:, 2], s=5, color="red", label="Groundtruth spline bases")
 
                         a3d.legend()
                         a2d.legend()
@@ -534,7 +673,7 @@ class PoseEstimator():
                         f2.clear()
                         f3.clear()
                         f4.clear()
-                        
+
                         mean_error_t = np.mean(errors_t, axis=0)
                         for i in range(batch_size):
                             plt.plot(
@@ -562,6 +701,7 @@ class PoseEstimator():
                         plt.savefig(
                             os.path.join(self.output_path, f"rot_error_frame.png"))
                         plt.clf()
+
                         # ============================================
 
 
