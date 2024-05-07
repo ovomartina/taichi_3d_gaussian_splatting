@@ -219,7 +219,7 @@ def gaussian_point_rasterisation_backward_with_pose(
                     # accumulated_alpha_i = 1. - T_i #alpha after passing current point
                     # Transmittance before passing current point
                     T_i = T_i / (1. - alpha)
-                    accumulated_alpha = 1. - T_i  # accumulated alha before passing current point
+                    accumulated_alpha = 1. - T_i  # accumulated alpha before passing current point
 
                     # print(
                     #     f"({pixel_v}, {pixel_u}, {point_offset}, {point_offset - start_offset}), accumulated_alpha: {accumulated_alpha}")
@@ -236,10 +236,20 @@ def gaussian_point_rasterisation_backward_with_pose(
 
                     if enable_depth_grad:
                         depth_i = tile_point_depth[idx_point_offset_with_sort_key_in_block]
-                        alpha_grad_from_depth = (depth_i * T_i - depth_w_i / (1. - alpha)) \
-                            * pixel_depth_grad
+                        # alpha_grad_from_depth = (depth_i * T_i - depth_w_i / (1. - alpha)) \
+                        #     * pixel_depth_grad
+                        d_depth_d_alpha = (
+                            T_i * (depth_i - d_pixel)
+                            + 1.0 / (1.0 - alpha) * (depth_w_i - acc_alpha_w_i * d_pixel)
+                        ) / (org_accumulated_alpha + 0.00001)
+                        alpha_grad_from_depth = d_depth_d_alpha * pixel_depth_grad
+                        alpha_grad_from_accumulated_alpha = (
+                            T_i - 1.0 / (1.0 - alpha) * acc_alpha_w_i
+                        ) * accumulated_alpha_grad_value
                         depth_w_i += depth_i * alpha * T_i
+                        acc_alpha_w_i +=  alpha * T_i
                         alpha_grad += alpha_grad_from_depth
+                        alpha_grad+= alpha_grad_from_accumulated_alpha
 
                     point_alpha_after_activation_grad = alpha_grad * gaussian_alpha
                     gaussian_point_3d_alpha_grad = point_alpha_after_activation_grad * \
@@ -267,7 +277,8 @@ def gaussian_point_rasterisation_backward_with_pose(
                     ti.atomic_add(in_camera_grad_uv_cov_buffer[point_offset, 2],
                                   point_uv_cov_grad[1, 1])
                     if enable_depth_grad:
-                        point_depth_grad = alpha * T_i * pixel_depth_grad
+                        #point_depth_grad = alpha * T_i * pixel_depth_grad
+                        point_depth_grad = alpha * T_i * pixel_depth_grad / (org_accumulated_alpha+0.00001)
                         ti.atomic_add(
                             in_camera_grad_depth_buffer[point_offset], point_depth_grad)
 
@@ -309,6 +320,8 @@ def gaussian_point_rasterisation_backward_with_pose(
             point_id=point_id)
         point_grad_uv = ti.math.vec2(
             grad_uv[point_id, 0], grad_uv[point_id, 1])
+        
+        
         point_grad_uv_cov_flat = ti.math.vec4(
             in_camera_grad_uv_cov_buffer[idx, 0],
             in_camera_grad_uv_cov_buffer[idx, 1],
@@ -393,10 +406,9 @@ def gaussian_point_rasterisation_backward_with_pose(
                                                 0.,
                                                 1.])
         # Added extra d_depth_d_translation
-        d_depth_d_q = point_grad_depth * \
-            d_depth_d_translation_camera @ d_translation_camera_d_q
-        d_depth_d_t = point_grad_depth * \
-            d_depth_d_translation_camera @ dxyz_d_t_world_camera
+        d_depth_d_q = point_grad_depth * d_depth_d_translation_camera @ d_translation_camera_d_q # Added extra d_depth_d_translation
+        d_depth_d_t = point_grad_depth * d_depth_d_translation_camera @ dxyz_d_t_world_camera
+
 
         grad_q[0] = grad_q[0] + multiply[0]
         grad_q[1] = grad_q[1] + multiply[1]
@@ -955,6 +967,14 @@ class GaussianPointCloudContinuousPoseRasterisation(torch.nn.Module):
 
                 grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
                     1, 7)
+                
+                # LiDAR loss
+                grad_delta_pose_pointcloud_camera_depth = torch.hstack(
+                    (grad_t_depth, grad_q_depth))
+
+                grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                    1,7) + grad_delta_pose_pointcloud_camera_depth.view( 1,7)
+                    
                 if torch.isinf(grad_delta_pose_pointcloud_camera).any():
                     print("BACKWARD - INF detected")
                     print(grad_delta_pose_pointcloud_camera)

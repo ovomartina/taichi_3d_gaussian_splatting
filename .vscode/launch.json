@@ -270,5 +270,22 @@
             ],
             "preLaunchTask": "install", 
         },
+        {
+            "name": "continuous trajectory complete",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/continuous_trajectory_complete.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--parquet_path",
+                "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet",
+                "--json_file_path",
+                "data/replica_colmap/room_1_high_quality_50_frames_test/val.json",
+                "--output_path",
+                "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/continuous_trajectory_output_complete",
+            ],
+            "preLaunchTask": "install", 
+        },
     ]
 }

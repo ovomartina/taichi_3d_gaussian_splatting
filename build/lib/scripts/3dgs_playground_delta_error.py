@@ -158,8 +158,8 @@ class PoseEstimator():
             for count, view in enumerate(d):
                 print(
                     f"=================Image {count}========================")
-                # if count <48:
-                #     continue
+                if count <46:
+                    continue
 
                 # Load groundtruth image
                 ground_truth_image_path = view["image_path"]
@@ -283,7 +283,7 @@ class PoseEstimator():
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
                 num_coarse_epochs = 0  # 3000
-                num_epochs = 2000  # 1000
+                num_epochs = 1000  # 1000
                 downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,

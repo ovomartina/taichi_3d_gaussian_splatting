@@ -46,12 +46,12 @@ for segment in segments:
     w_2 = np.array([point[2] for point in segment])
 
     # Create B-spline curve
-    out_x = splrep(np.arange(N), x, s=0.05)
-    out_y = splrep(np.arange(N), y, s=0.05)
-    out_z = splrep(np.arange(N), z, s=0.05)
-    out_w_0 = splrep(np.arange(N), w_0, s=0.05)
-    out_w_1 = splrep(np.arange(N), w_1, s=0.05)
-    out_w_2 = splrep(np.arange(N), w_2, s=0.05)
+    out_x = splrep(np.arange(N), x )
+    out_y = splrep(np.arange(N), y )
+    out_z = splrep(np.arange(N), z )
+    out_w_0 = splrep(np.arange(N), w_0)
+    out_w_1 = splrep(np.arange(N), w_1)
+    out_w_2 = splrep(np.arange(N), w_2)
 
     print(out_x)
 

@@ -213,7 +213,7 @@ class GaussianPointTrainerBundleAdjustment:
         # DEBUG colmap =========================================================
         # self.scene = GaussianPointCloudScene.from_parquet(
         #     self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
-        transform = np.eye(4)
+        # transform = np.eye(4)
         self.scene = GaussianPointCloudScene.from_parquet(
             self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
         # ======================================================================
@@ -330,14 +330,14 @@ class GaussianPointTrainerBundleAdjustment:
             image_gt, q_pointcloud_camera_current, t_pointcloud_camera_current, camera_info, depth_gt, lidar_pcd, t_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera_gt, t_pointcloud_camera_gt = next(
                 train_data_loader_iter)
 
-            # DEBUG colmap =======================================================
-            q_pointcloud_camera_current = q_pointcloud_camera_gt
-            t_pointcloud_camera_current = t_pointcloud_camera_gt
-            groundtruth_T_colmap_camera = torch.tensor(
-                df.iloc[index]["T_colmap_camera"])
-            q_pointcloud_camera_gt, t_pointcloud_camera_gt = SE3_to_quaternion_and_translation_torch(
-                groundtruth_T_colmap_camera.unsqueeze(0))
-            # ====================================================================
+            # # DEBUG colmap =======================================================
+            # q_pointcloud_camera_current = q_pointcloud_camera_gt
+            # t_pointcloud_camera_current = t_pointcloud_camera_gt
+            # groundtruth_T_colmap_camera = torch.tensor(
+            #     df.iloc[index]["T_colmap_camera"])
+            # q_pointcloud_camera_gt, t_pointcloud_camera_gt = SE3_to_quaternion_and_translation_torch(
+            #     groundtruth_T_colmap_camera.unsqueeze(0))
+            # # ====================================================================
 
             # Sanity check
             # if total_iteration_count < self.config.start_pose_optimization:
@@ -751,12 +751,12 @@ class GaussianPointTrainerBundleAdjustment:
             if lidar_pcd is not None:
                 lidar_measurement = Lidar(
                     lidar_pcd.cuda(), t_lidar_camera.cuda())
-                # DEBUG =================================================================
-                lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
-                    lidar_measurement.point_cloud)
-                # ===================================================
+                # # DEBUG =================================================================
+                # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
+                #     lidar_measurement.point_cloud)
+                # # ===================================================
                 visible_points = lidar_measurement.lidar_points_visible(
-                    lidar_pointcloud_colmap,  # lidar_measurement.point_cloud, #
+                    lidar_measurement.point_cloud, #
                     T_pointcloud_camera,
                     camera_info_original.camera_intrinsics,
                     (camera_info_original.camera_width, camera_info_original.camera_height))
@@ -1250,12 +1250,12 @@ class GaussianPointTrainerBundleAdjustment:
                 if lidar_pcd is not None:
                     lidar_measurement = Lidar(
                         lidar_pcd.cuda(), t_lidar_camera.cuda())
-                    # DEBUG =================================================================
-                    lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
-                        lidar_measurement.point_cloud)
-                    # ===================================================
+                    # # DEBUG =================================================================
+                    # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
+                    #     lidar_measurement.point_cloud)
+                    # # ===================================================
                     visible_points = lidar_measurement.lidar_points_visible(
-                        lidar_pointcloud_colmap,  # lidar_measurement.point_cloud, #
+                        lidar_measurement.point_cloud, #lidar_pointcloud_colmap,  # 
                         T_pointcloud_camera,
                         camera_info.camera_intrinsics,
                         (camera_info.camera_width, camera_info.camera_height))

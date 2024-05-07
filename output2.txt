@@ -1,0 +1,481 @@
+nohup: ignoring input
+/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/curve_evaluation.py:134: FutureWarning: `rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.
+To use the future default and silence this warning we advise to pass `rcond=None`, to keep using the old, explicitly pass `rcond=-1`.
+  bases, _, _, _ = np.linalg.lstsq(A, b)
+/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/continuous_trajectory.py:347: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1702400366987/work/torch/csrc/utils/tensor_new.cpp:261.)
+  pypose_bspline_knots[base_number, :] = torch.hstack((torch.tensor([
+/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/pypose/lietensor/lietensor.py:918: UserWarning: Tensor Shape Invalid by calling <built-in method cat of type object at 0x7f18a94f2a40>, go to https://pypose.org/docs/main/generated/pypose.LieTensor
+  warnings.warn('Tensor Shape Invalid by calling {}, ' \
+/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/pypose/lietensor/lietensor.py:918: UserWarning: Tensor Shape Invalid by calling <slot wrapper '__getitem__' of 'torch._C._TensorBase' objects>, go to https://pypose.org/docs/main/generated/pypose.LieTensor
+  warnings.warn('Tensor Shape Invalid by calling {}, ' \
+/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/continuous_trajectory.py:434: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  current_pose[0, 3:]), torch.tensor(gt_pose[0, 3:]))
+/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/continuous_trajectory.py:446: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  error_q = quaternion_difference_rad(torch.tensor(pypose_bspline_knots[j, 3:]), torch.tensor(
+/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/pypose/lietensor/lietensor.py:918: UserWarning: Tensor Shape Invalid by calling <method 'unsqueeze' of 'torch._C._TensorBase' objects>, go to https://pypose.org/docs/main/generated/pypose.LieTensor
+  warnings.warn('Tensor Shape Invalid by calling {}, ' \
+/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/taichi/lang/kernel_impl.py:763: UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad attribute won't be populated during autograd.backward(). If you indeed want the .grad field to be populated for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See github.com/pytorch/pytorch/pull/30531 for more informations. (Triggered internally at /opt/conda/conda-bld/pytorch_1702400366987/work/build/aten/src/ATen/core/TensorBody.h:489.)
+  if v.requires_grad and v.grad is None:
+/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/pypose/lietensor/lietensor.py:918: UserWarning: Tensor Shape Invalid by calling <method 'unbind' of 'torch._C._TensorBase' objects>, go to https://pypose.org/docs/main/generated/pypose.LieTensor
+  warnings.warn('Tensor Shape Invalid by calling {}, ' \
+[Taichi] version 1.7.0, llvm 15.0.4, commit 2fd24490, linux, python 3.10.13
+Opening parquet file  logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet
+[Taichi] Starting on arch=cuda
+Discarding images
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.1451885998249054
+Current  loss: 0.1452207714319229
+Current photometric loss: 0.14612138271331787
+Current  loss: 0.14615482091903687
+Current photometric loss: 0.14450854063034058
+Current  loss: 0.14454150199890137
+Current photometric loss: 0.13735386729240417
+Current  loss: 0.1373831331729889
+Current photometric loss: 0.135122612118721
+Current  loss: 0.13515114784240723
+Current photometric loss: 0.13131648302078247
+Current  loss: 0.13134342432022095
+Current photometric loss: 0.12976820766925812
+Current  loss: 0.1297946572303772
+Current photometric loss: 0.12739117443561554
+Current  loss: 0.12741655111312866
+Current photometric loss: 0.1254996508359909
+Current  loss: 0.12552395462989807
+Current photometric loss: 0.12167003750801086
+Current  loss: 0.12169322371482849
+Current photometric loss: 0.11893271654844284
+Current  loss: 0.11895517259836197
+Current photometric loss: 0.11452196538448334
+Current  loss: 0.1145431250333786
+Current photometric loss: 0.11267948150634766
+Current  loss: 0.11270003765821457
+Current photometric loss: 0.11072629690170288
+Current  loss: 0.11074598878622055
+Current photometric loss: 0.10705685615539551
+Current  loss: 0.10707563161849976
+Current photometric loss: 0.10686024278402328
+Current  loss: 0.10687882453203201
+Current photometric loss: 0.10393828898668289
+Current  loss: 0.1039561852812767
+Current photometric loss: 0.09918388724327087
+Current  loss: 0.09920108318328857
+Current photometric loss: 0.09641347825527191
+Current  loss: 0.09643024951219559
+Current photometric loss: 0.09373793751001358
+Current  loss: 0.09375438094139099
+Current photometric loss: 0.09234973788261414
+Current  loss: 0.09236597269773483
+Current photometric loss: 0.09030907601118088
+Current  loss: 0.09032502770423889
+Current photometric loss: 0.08535952866077423
+Current  loss: 0.08537504822015762
+Current photometric loss: 0.08206106722354889
+Current  loss: 0.08207644522190094
+Current photometric loss: 0.07931996881961823
+Current  loss: 0.07933532446622849
+Current photometric loss: 0.07743468880653381
+Current  loss: 0.0774499848484993
+Current photometric loss: 0.07576853036880493
+Current  loss: 0.07578384876251221
+Current photometric loss: 0.07384319603443146
+Current  loss: 0.07385855913162231
+Current photometric loss: 0.07346004992723465
+Current  loss: 0.07347546517848969
+Current photometric loss: 0.07238356024026871
+Current  loss: 0.07239893823862076
+Current photometric loss: 0.07203670591115952
+Current  loss: 0.07205209136009216
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.15013086795806885
+Current  loss: 0.15046639740467072
+Current photometric loss: 0.13995790481567383
+Current  loss: 0.14024432003498077
+Current photometric loss: 0.13589926064014435
+Current  loss: 0.13616614043712616
+Current photometric loss: 0.12757958471775055
+Current  loss: 0.12781567871570587
+Current photometric loss: 0.12734265625476837
+Current  loss: 0.1275693029165268
+Current photometric loss: 0.13194090127944946
+Current  loss: 0.1321740448474884
+Current photometric loss: 0.139456108212471
+Current  loss: 0.13974501192569733
+Current photometric loss: 0.136373832821846
+Current  loss: 0.13666503131389618
+Current photometric loss: 0.13771593570709229
+Current  loss: 0.1380176544189453
+Current photometric loss: 0.13987216353416443
+Current  loss: 0.1401849240064621
+Current photometric loss: 0.14133711159229279
+Current  loss: 0.14166352152824402
+Current photometric loss: 0.14402556419372559
+Current  loss: 0.14436863362789154
+Current photometric loss: 0.14453604817390442
+Current  loss: 0.1448882669210434
+Current photometric loss: 0.14885547757148743
+Current  loss: 0.1492246836423874
+Current photometric loss: 0.15044011175632477
+Current  loss: 0.15082593262195587
+Current photometric loss: 0.1513531506061554
+Current  loss: 0.15174461901187897
+Current photometric loss: 0.15343448519706726
+Current  loss: 0.153844952583313
+Current photometric loss: 0.15375134348869324
+Current  loss: 0.15416640043258667
+Current photometric loss: 0.15461379289627075
+Current  loss: 0.15503676235675812
+Current photometric loss: 0.15533076226711273
+Current  loss: 0.15575745701789856
+BACKWARD - INF detected
+tensor([[   -inf, -0.0055,    -inf, -0.0061,  0.0029, -0.0031, -0.0050]],
+       device='cuda:0')
+tensor([[-0.0060,  0.0029, -0.0031, -0.0050]], device='cuda:0')
+tensor([[   -inf, -0.0055,    -inf]], device='cuda:0')
+Current photometric loss: 0.15630608797073364
+Current  loss: 0.15674082934856415
+Current photometric loss: 0.15736708045005798
+Current  loss: 0.15780885517597198
+Current photometric loss: 0.15750348567962646
+Current  loss: 0.1579478234052658
+Current photometric loss: 0.15788163244724274
+Current  loss: 0.15832942724227905
+Current photometric loss: 0.15866874158382416
+Current  loss: 0.15912504494190216
+Current photometric loss: 0.15871986746788025
+Current  loss: 0.15917566418647766
+Current photometric loss: 0.15919137001037598
+Current  loss: 0.15965154767036438
+Current photometric loss: 0.15960878133773804
+Current  loss: 0.16007398068904877
+Current photometric loss: 0.16022923588752747
+Current  loss: 0.1607007086277008
+Current photometric loss: 0.16105735301971436
+Current  loss: 0.16153544187545776
+Current photometric loss: 0.16211652755737305
+Current  loss: 0.16260209679603577
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.1410129964351654
+Current  loss: 0.1424313187599182
+Current photometric loss: 0.14421486854553223
+Current  loss: 0.14561307430267334
+Current photometric loss: 0.14575520157814026
+Current  loss: 0.1471407413482666
+Current photometric loss: 0.1471446454524994
+Current  loss: 0.14852449297904968
+Current photometric loss: 0.14760488271713257
+Current  loss: 0.14898250997066498
+Current photometric loss: 0.147843599319458
+Current  loss: 0.14922499656677246
+Current photometric loss: 0.1475669890642166
+Current  loss: 0.14893800020217896
+Current photometric loss: 0.14858807623386383
+Current  loss: 0.14997923374176025
+Current photometric loss: 0.14852887392044067
+Current  loss: 0.14992058277130127
+Current photometric loss: 0.14842209219932556
+Current  loss: 0.149813711643219
+Current photometric loss: 0.1484273374080658
+Current  loss: 0.1498185247182846
+Current photometric loss: 0.14822575449943542
+Current  loss: 0.14961819350719452
+Current photometric loss: 0.14807265996932983
+Current  loss: 0.1494668424129486
+Current photometric loss: 0.14812253415584564
+Current  loss: 0.14951655268669128
+Current photometric loss: 0.14798517525196075
+Current  loss: 0.14937980473041534
+Current photometric loss: 0.147969052195549
+Current  loss: 0.1493644118309021
+Current photometric loss: 0.14786744117736816
+Current  loss: 0.1492636799812317
+Current photometric loss: 0.14781934022903442
+Current  loss: 0.14921621978282928
+Current photometric loss: 0.1476946771144867
+Current  loss: 0.14909237623214722
+Current photometric loss: 0.14748069643974304
+Current  loss: 0.14887982606887817
+Current photometric loss: 0.1475059688091278
+Current  loss: 0.14890457689762115
+Current photometric loss: 0.14749440550804138
+Current  loss: 0.14889322221279144
+Current photometric loss: 0.1475113034248352
+Current  loss: 0.14890983700752258
+Current photometric loss: 0.1475033462047577
+Current  loss: 0.14890190958976746
+Current photometric loss: 0.1474997103214264
+Current  loss: 0.14889831840991974
+Current photometric loss: 0.1475045084953308
+Current  loss: 0.14890336990356445
+Current photometric loss: 0.14744864404201508
+Current  loss: 0.14884813129901886
+Current photometric loss: 0.14741510152816772
+Current  loss: 0.14881494641304016
+Current photometric loss: 0.14739729464054108
+Current  loss: 0.14879725873470306
+Current photometric loss: 0.1473119705915451
+Current  loss: 0.14871272444725037
+Current photometric loss: 0.14729386568069458
+Current  loss: 0.14869476854801178
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.15305809676647186
+Current  loss: 0.15587665140628815
+Current photometric loss: 0.1500462293624878
+Current  loss: 0.15305893123149872
+Current photometric loss: 0.16184663772583008
+Current  loss: 0.16551177203655243
+Current photometric loss: 0.16965579986572266
+Current  loss: 0.17382892966270447
+Current photometric loss: 0.17252077162265778
+Current  loss: 0.1769571453332901
+Current photometric loss: 0.17965352535247803
+Current  loss: 0.1847040057182312
+Current photometric loss: 0.18524818122386932
+Current  loss: 0.19078655540943146
+Current photometric loss: 0.18594911694526672
+Current  loss: 0.1915828287601471
+Current photometric loss: 0.1869235336780548
+Current  loss: 0.19266822934150696
+Current photometric loss: 0.18806305527687073
+Current  loss: 0.19401507079601288
+Current photometric loss: 0.18788093328475952
+Current  loss: 0.19375497102737427
+Current photometric loss: 0.18806959688663483
+Current  loss: 0.19399087131023407
+Current photometric loss: 0.1892021894454956
+Current  loss: 0.19526435434818268
+Current photometric loss: 0.19035837054252625
+Current  loss: 0.19657132029533386
+Current photometric loss: 0.19260628521442413
+Current  loss: 0.19895178079605103
+Current photometric loss: 0.19138365983963013
+Current  loss: 0.19773033261299133
+Current photometric loss: 0.1917821168899536
+Current  loss: 0.1981787532567978
+Current photometric loss: 0.19219636917114258
+Current  loss: 0.19865082204341888
+Current photometric loss: 0.19255021214485168
+Current  loss: 0.19907382130622864
+Current photometric loss: 0.19262683391571045
+Current  loss: 0.19914014637470245
+Current photometric loss: 0.1928357183933258
+Current  loss: 0.19936718046665192
+Current photometric loss: 0.1934252828359604
+Current  loss: 0.20003192126750946
+Current photometric loss: 0.1933312565088272
+Current  loss: 0.1999472975730896
+Current photometric loss: 0.1934768706560135
+Current  loss: 0.2001085877418518
+Current photometric loss: 0.19384092092514038
+Current  loss: 0.20052658021450043
+Current photometric loss: 0.19439835846424103
+Current  loss: 0.20111052691936493
+Current photometric loss: 0.19451047480106354
+Current  loss: 0.20122921466827393
+Current photometric loss: 0.19421181082725525
+Current  loss: 0.200944185256958
+Current photometric loss: 0.19455796480178833
+Current  loss: 0.20133879780769348
+Current photometric loss: 0.1949213445186615
+Current  loss: 0.20172683894634247
+Current photometric loss: 0.19508790969848633
+Current  loss: 0.20193469524383545
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.15300697088241577
+Current  loss: 0.16994865238666534
+Current photometric loss: 0.14227193593978882
+Current  loss: 0.16037395596504211
+Current photometric loss: 0.13671976327896118
+Current  loss: 0.16705991327762604
+Current photometric loss: 0.1350761204957962
+Current  loss: 0.16386137902736664
+Current photometric loss: 0.1363317370414734
+Current  loss: 0.15373235940933228
+Current photometric loss: 0.1344795823097229
+Current  loss: 0.15158256888389587
+Current photometric loss: 0.13087154924869537
+Current  loss: 0.14722000062465668
+Current photometric loss: 0.12880489230155945
+Current  loss: 0.14529865980148315
+Current photometric loss: 0.1259017288684845
+Current  loss: 0.14207713305950165
+Current photometric loss: 0.12341810762882233
+Current  loss: 0.1391787976026535
+Current photometric loss: 0.11989641189575195
+Current  loss: 0.13541088998317719
+Current photometric loss: 0.11719238758087158
+Current  loss: 0.13247567415237427
+Current photometric loss: 0.11417931318283081
+Current  loss: 0.12879100441932678
+Current photometric loss: 0.11360949277877808
+Current  loss: 0.12812760472297668
+Current photometric loss: 0.11154408752918243
+Current  loss: 0.12540701031684875
+Current photometric loss: 0.11133600771427155
+Current  loss: 0.12502363324165344
+Current photometric loss: 0.10920757055282593
+Current  loss: 0.12274689972400665
+Current photometric loss: 0.10699431598186493
+Current  loss: 0.12020105123519897
+Current photometric loss: 0.10606880486011505
+Current  loss: 0.11920071393251419
+Current photometric loss: 0.10527090728282928
+Current  loss: 0.11844936013221741
+Current photometric loss: 0.10542725026607513
+Current  loss: 0.11854531615972519
+Current photometric loss: 0.10424941778182983
+Current  loss: 0.11723745614290237
+Current photometric loss: 0.10267112404108047
+Current  loss: 0.11560551077127457
+Current photometric loss: 0.10204441100358963
+Current  loss: 0.1148446798324585
+Current photometric loss: 0.09948856383562088
+Current  loss: 0.11224550753831863
+Current photometric loss: 0.09635819494724274
+Current  loss: 0.10897906869649887
+Current photometric loss: 0.09490890800952911
+Current  loss: 0.10744407773017883
+Current photometric loss: 0.09537789225578308
+Current  loss: 0.10784009844064713
+Current photometric loss: 0.09552839398384094
+Current  loss: 0.10798128694295883
+Current photometric loss: 0.09537310898303986
+Current  loss: 0.10772454738616943
+Current photometric loss: 0.09561849385499954
+Current  loss: 0.10787559300661087
+Frame 0 - index 0 in segment 0
+Setting start_t_optimization to True
+=================Batch 0========================
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000000.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000000.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000001.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000001.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000002.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000002.png
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/frames/frame000003.jpg
+Loading image /media/scratch1/mroncoroni/groundtruth/replica/room_1/50_frames_test/depth/depth000003.png
+Current photometric loss: 0.15744879841804504
+Current  loss: 0.1871652454137802
+Current photometric loss: 0.12793177366256714
+Current  loss: 0.1481253057718277
+Current photometric loss: 0.11355258524417877
+Current  loss: 0.13371925055980682
+Current photometric loss: 0.14224989712238312
+Current  loss: 0.17232845723628998
+Current photometric loss: 0.1584596037864685
+Current  loss: 0.1985265612602234
+Current photometric loss: 0.17063191533088684
+Current  loss: 0.21909360587596893
+Current photometric loss: 0.173479363322258
+Current  loss: 0.22581231594085693
+BACKWARD - INF detected
+tensor([[-inf, -inf, -inf, -inf, -inf, nan, nan]], device='cuda:0')
+tensor([[-inf, -inf, nan, nan]], device='cuda:0')
+tensor([[-inf, -inf, -inf]], device='cuda:0')
+Current photometric loss: 0.17767372727394104
+Current  loss: 0.23444484174251556
+Current photometric loss: 0.18066975474357605
+Current  loss: 0.24137070775032043
+BACKWARD - INF detected
+tensor([[   -inf,  0.0005,  0.0001,  0.0023,  0.0150, -0.0229, -0.0079]],
+       device='cuda:0')
+tensor([[ 0.0031,  0.0146, -0.0221, -0.0085]], device='cuda:0')
+tensor([[      -inf, 4.6423e-04, 5.5524e-05]], device='cuda:0')
+Current photometric loss: 0.1812172532081604
+Current  loss: 0.2443731725215912
+BACKWARD - INF detected
+tensor([[-0.0007, -0.0026,    -inf,  0.0038,  0.0101,  0.0150,  0.0002]],
+       device='cuda:0')
+tensor([[ 0.0050,  0.0096,  0.0157, -0.0014]], device='cuda:0')
+tensor([[-0.0007, -0.0026,    -inf]], device='cuda:0')
+Current photometric loss: 0.18327441811561584
+Current  loss: 0.2487286925315857
+Current photometric loss: 0.1839713156223297
+Current  loss: 0.250344455242157
+Current photometric loss: 0.18391264975070953
+Current  loss: 0.25080955028533936
+Current photometric loss: 0.18389131128787994
+Current  loss: 0.2510034143924713
+Current photometric loss: 0.18378300964832306
+Current  loss: 0.25085216760635376
+Current photometric loss: 0.1854759305715561
+Current  loss: 0.253253310918808
+Current photometric loss: 0.18437814712524414
+Current  loss: 0.25235119462013245
+Current photometric loss: 0.18477824330329895
+Current  loss: 0.25334101915359497
+Current photometric loss: 0.1855355203151703
+Current  loss: 0.25490617752075195
+Current photometric loss: 0.18595533072948456
+Current  loss: 0.25583380460739136
+Current photometric loss: 0.18627777695655823
+Current  loss: 0.25663745403289795
+Current photometric loss: 0.18664836883544922
+Current  loss: 0.2576448619365692
+Current photometric loss: 0.18708282709121704
+Current  loss: 0.25861597061157227
+Current photometric loss: 0.1873609721660614
+Current  loss: 0.259255588054657
+Current photometric loss: 0.18759670853614807
+Current  loss: 0.25977417826652527
+Current photometric loss: 0.18819984793663025
+Current  loss: 0.26113277673721313
+Current photometric loss: 0.18875271081924438
+Current  loss: 0.26251378655433655
+Current photometric loss: 0.18928730487823486
+Current  loss: 0.2632676362991333
+Current photometric loss: 0.19023282825946808
+Current  loss: 0.26444485783576965
+Current photometric loss: 0.18971046805381775
+Current  loss: 0.2646569013595581
+Current photometric loss: 0.19059276580810547
+Current  loss: 0.2652599811553955

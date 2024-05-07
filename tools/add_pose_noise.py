@@ -7,6 +7,9 @@ import torch
 from taichi_3d_gaussian_splatting.utils import SE3_to_quaternion_and_translation_torch, perturb_pose_quaternion_translation_torch, quaternion_to_rotation_matrix_torch
 import sym
 
+# DEBUG - allow reproducibility
+torch.manual_seed(42)
+np.random.seed(42)
 
 def add_pose_noise(json_path: str, noise_q: float, noise_t: float):
     

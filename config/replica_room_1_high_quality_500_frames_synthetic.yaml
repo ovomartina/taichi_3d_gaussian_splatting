@@ -2,7 +2,7 @@ adaptive-controller-config:
   densification-view-space-position-gradients-threshold: 0.000006
   gaussian-split-factor-phi: 1.6
   num-iterations-densify: 100
-  num-iterations-reset-alpha: 40000 #4000 
+  num-iterations-reset-alpha: 40000000 #4000 
   num-iterations-warm-up: 500
   reset-alpha-value:  -4.0 # -1.9
   transparent-alpha-threshold: -6.0 # -2.0 
@@ -36,7 +36,7 @@ loss-function-config:
   lambda-smooth-value: 0.0005
   enable_regularization: False
   regularization_weight: 0.005
-num-iterations: 30001
+num-iterations: 500001
 pointcloud-parquet-path: 'data/replica/room_1_high_quality_500_frames/point_cloud.parquet'
 rasterisation-config:
   depth-to-sort-key-scale: 100.0
@@ -45,4 +45,4 @@ rasterisation-config:
 summary-writer-log-dir: 'logs/replica/room_1_high_quality_500_frames'
 train-dataset-json-path: 'data/replica/room_1_high_quality_500_frames/train.json'
 val-dataset-json-path: 'data/replica/room_1_high_quality_500_frames/val.json'
-val-interval: 1000
+val-interval: 5000

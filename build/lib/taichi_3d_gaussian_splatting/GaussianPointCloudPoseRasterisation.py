@@ -974,11 +974,14 @@ class GaussianPointCloudPoseRasterisation(torch.nn.Module):
                 grad_delta_pose_pointcloud_camera_depth = torch.hstack(
                     (grad_q_depth, grad_t_depth)) @ grad_delta_pose_torch
 
+                # DEBUG ==================================================================
+                # grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                #     6, 1) + grad_delta_pose_pointcloud_camera_depth.view(
+                #     6, 1)
                 
                 grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
-                    6, 1) + grad_delta_pose_pointcloud_camera_depth.view(
-                    6, 1)
-                
+                    6, 1) 
+                #==========================================================================
 
                 
                 return grad_pointcloud, \

@@ -109,27 +109,29 @@ def evaluate_spline_bases_with_derivatives_constrained(poses: np.array, derivati
     return np.array(bases).reshape(4, 6)
 
 
-def evaluate_spline_bases_lsq(poses: np.array, batch_size: int):
+def evaluate_spline_bases_lsq(poses: np.array, batch_size: int, enable_zspline = False):
     segments = poses.shape[0]//batch_size
     t_step = 1/batch_size
-    A = np.zeros((poses.shape[0], 4+(segments-1)))
+    if segments==1:
+        A = np.zeros((poses.shape[0], 4+(segments-1))) 
+    else:
+        A = np.zeros((poses.shape[0], 4+(segments))) #-1
     for segment_count in range(segments):
-        print(segment_count)
         for i in range(batch_size):
             current_t = t_step * i
             tt = np.power(current_t, np.arange(0, 4))
-            w = np.matmul(M.clone().cpu().numpy(), tt)
+            if enable_zspline:
+                w = np.matmul(M_z.clone().cpu().numpy(), tt)
+            else:
+                w = np.matmul(M.clone().cpu().numpy(), tt)
 
             # .repeat(6, axis=0)
             section = np.array(
                 [1-w[0], w[0]-w[1], w[1]-w[2], w[2]]).reshape((1, 4))
-            print(section)
             A[segment_count*batch_size + i, segment_count:segment_count+4] = section
 
-    print("A:", A)
     b = poses
     bases, _, _, _ = np.linalg.lstsq(A, b)
-    print("BAses:", bases)
     return (bases)
 
 # poses: Nx6, previous_bases:3x6
