@@ -15,14 +15,14 @@ for dir in dirs:
         epoch = int(re.search(pattern, dir).group())
         print(epoch)
         #if epoch < 10 or (epoch >45 and epoch < 55):
-        # if epoch != 29 and epoch !=59:
-        if epoch > -1:
+        if epoch <9:
+        #if epoch > -1:
             file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_q.out")
-            err_q = np.loadtxt(file_path, delimiter=",").reshape(1000, 1)
+            err_q = np.loadtxt(file_path, delimiter=",").reshape(3000, 1)
             file_path = os.path.join(f"/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/scripts/{folder}", dir)
             file_path = os.path.join(file_path, "error_t.out")
-            err_t = np.loadtxt(file_path, delimiter=",").reshape(1000, 3)
+            err_t = np.loadtxt(file_path, delimiter=",").reshape(3000, 3)
             if (not np.isnan(err_q).any()) and (not np.isnan(err_t).any()):
                 errors_q.append(err_q)
                 errors_t.append(err_t)

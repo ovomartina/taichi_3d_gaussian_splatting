@@ -106,8 +106,9 @@ class GaussianPointCloudTrainer:
             torch.from_numpy(q)).detach().cpu().numpy()
         transform[:3, 3] = transform[:3, 3] + \
             t_pointcloud_pointcloudstar  # 0.4878: scale factor
-
-        print(transform)
+        
+        # transform = np.eye(4)
+        print("TRANSFORM", transform)
 
         self.scene = GaussianPointCloudScene.from_parquet(
             self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)

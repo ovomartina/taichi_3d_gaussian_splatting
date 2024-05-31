@@ -22,7 +22,7 @@ def process_gt_center(gt_center, reconstruction_centers, bound):
 
     return reconstruction_centers_within_bounds
 
-def compute_overlapping_voxels(voxel_grid1, voxel_grid2):
+def compute_overlapping_voxels(voxel_grid1, voxel_grid2, output_directory_path):
     voxel_size = voxel_grid1.voxel_size
     print(f"Voxel size: {voxel_size}")
     bound = voxel_size / 2
@@ -55,12 +55,13 @@ def compute_overlapping_voxels(voxel_grid1, voxel_grid2):
     
     intersection_point_cloud = o3d.geometry.PointCloud()
     intersection_point_cloud.points = o3d.utility.Vector3dVector(overlap_centers)
-    output_directory = "/home/mroncoroni/git/evaluation_scripts/output/voxelization/voxelized_taichi3dgs_reconstruction"
+    # output_directory = "/home/mroncoroni/git/evaluation_scripts/output/voxelization/voxelized_taichi3dgs_reconstruction"
+    output_directory = output_directory_path
     if not os.path.exists(output_directory):
         print("Creating output directory.....")
         os.makedirs(output_directory)
-    o3d.io.write_point_cloud(os.path.join(output_directory, "overlap_room_1_high_quality_500_frames.ply"), intersection_point_cloud)
-    print(f"Writing overlapping pointcloud to {os.path.join(output_directory, 'overlap_room_1_high_quality_500_frames.ply')}")
+    o3d.io.write_point_cloud(os.path.join(output_directory, "overlap_room_1_high_quality_500_frames_no_BA.ply"), intersection_point_cloud)
+    print(f"Writing overlapping pointcloud to {os.path.join(output_directory, 'overlap_room_1_high_quality_500_frames_no_BA.ply')}")
     print(overlap_centers)
     # Number of overlapping voxels
     num_overlapping_voxels = len(overlap_centers)
@@ -78,7 +79,7 @@ def main(groundtruth_voxel_grid_path, reconstructed_voxel_grid_path, output_dire
     reconstructed_voxel_grid = load_voxel_grid(reconstructed_voxel_grid_path)
     
     # Compute the number of overlapping voxels
-    num_overlapping_voxels = compute_overlapping_voxels(groundtruth_voxel_grid, reconstructed_voxel_grid)
+    num_overlapping_voxels = compute_overlapping_voxels(groundtruth_voxel_grid, reconstructed_voxel_grid,output_directory_path)
     print(f"Number of overlapping voxels: {num_overlapping_voxels}")
     output_directory = output_directory_path
    

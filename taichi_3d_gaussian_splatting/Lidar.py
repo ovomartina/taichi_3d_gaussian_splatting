@@ -111,10 +111,11 @@ class Lidar:
 
         is_visible_x = (0 <= normalized_point[0]) & (normalized_point[0] < image_size[0]) & (
             transformed_points[2] > 0.001) & (transformed_points[2] < 1000.)
+        
         is_visible_y = (0 <= normalized_point[1]) & (normalized_point[1] < image_size[1]) & (
             transformed_points[2] > 0.001) & (transformed_points[2] < 1000.)
         is_visible = is_visible_x & is_visible_y
-
+        print(is_visible.sum())
         transformed_points = torch.transpose(transformed_points, 0, 1)
         visible_points = transformed_points[is_visible]
 

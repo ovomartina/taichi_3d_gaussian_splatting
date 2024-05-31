@@ -202,10 +202,10 @@ class PoseEstimator():
 
             # Batch images
             for i in range(total_images):
-                if i > 0:
+                if i == 0 or i>1:
                     continue
                 for lambda_depth in lambdas_depth:
-                    self.output_path = f"scripts/continuous_trajectory_output_q_t_perturbed_z_spline_lidar_lambda_{lambda_depth}"
+                    self.output_path = f"scripts/continuous_trajectory_output_q_t_perturbed_test"
                     if not os.path.exists(self.output_path):
                         os.makedirs(self.output_path)
                     num_segment = i//batch_size
@@ -323,8 +323,8 @@ class PoseEstimator():
                     #         _EPS) for k in range(batch_size)]
                     # ))
                     
-                    groundtruth_bases = curve_evaluation.evaluate_spline_bases_lsq(np.array(  # FIX
-                        [groundtruth_pose[k].to_tangent(
+                    groundtruth_bases = curve_evaluation.evaluate_spline_bases_lsq(np.array(  
+                        [perturbed_pose[k].to_tangent( #groundtruth_pose
                             _EPS) for k in range(batch_size)]
                     ), batch_size, enable_zspline=True)
                     # DEBUG
@@ -348,14 +348,25 @@ class PoseEstimator():
                                 base_lie.position()]).to(torch.float32), torch.tensor([
                                     base_lie.rotation().data[:]]).to(torch.float32)))
                     else:
-                        pypose_bspline_knots = torch.zeros((4, 7))
-                        pypose_bspline_knots[:3, :] = bases[i:i+3, :]
+                        # pypose_bspline_knots = torch.zeros((4, 7))
+                        # pypose_bspline_knots[:3, :] = bases[i:i+3, :]
 
-                        # Translation guess:set to current velocity
-                        pypose_bspline_knots[3, :3] = bases[i+2,
-                                                            :3]  # + (bases[i+2, :3]-bases[i+1, :3])
-                        # Rotation: set as last estimate
-                        pypose_bspline_knots[3, 3:] = bases[i+2, 3:]
+                        # # Translation guess:set to current velocity
+                        # pypose_bspline_knots[3, :3] = bases[i+2,
+                        #                                     :3]  # + (bases[i+2, :3]-bases[i+1, :3])
+                        # # Rotation: set as last estimate
+                        # pypose_bspline_knots[3, 3:] = bases[i+2, 3:]
+                        perturbed_bases = groundtruth_bases + \
+                            np.random.normal(loc=0, scale=0.05, size=(
+                                4, 6))  # np.hstack((np.zeros((4,3)), np.random.normal(loc=0, scale=0.05, size=(4, 3))))
+                        bspline_bases = torch.tensor(perturbed_bases).reshape(
+                            (4, 6)).cuda()
+                        pypose_bspline_knots = torch.zeros((4, 7))
+                        for base_number, base in enumerate(bspline_bases):
+                            base_lie = sym.Pose3.from_tangent(base)
+                            pypose_bspline_knots[base_number, :] = torch.hstack((torch.tensor([
+                                base_lie.position()]).to(torch.float32), torch.tensor([
+                                    base_lie.rotation().data[:]]).to(torch.float32)))
 
                     pypose_groundtruth_bspline_knots = torch.zeros((4, 7))
                     for base_number, base in enumerate(groundtruth_bases):
@@ -396,6 +407,7 @@ class PoseEstimator():
                     error_bases_t = np.zeros((4, num_epochs))
 
                     for epoch in range(num_epochs):
+                        L1 = 0
                         for v, view_dict in enumerate(view):
                             # Set the gradient to zero
                             # optimizer_bspline_bases.zero_grad()
@@ -482,7 +494,7 @@ class PoseEstimator():
                             # =============================
 
                             # sum over all images
-                            L1 = 0.8*torch.abs(predicted_image_temp - ground_truth_image_temp).mean() + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
+                            L1 += 0.8*torch.abs(predicted_image_temp - ground_truth_image_temp).mean() + 0.2*(1 - ssim(predicted_image_temp, ground_truth_image_temp,
                                                                                                                     data_range=1, size_average=True))
 
                             # Depth backprop

@@ -1,0 +1,64 @@
+adaptive_controller_config: 
+  densification_multi_frame_position_gradients_threshold: 1000.0
+  densification_multi_frame_view_pixel_avg_space_position_gradients_threshold: 1000.0
+  densification_multi_frame_view_space_position_gradients_threshold: 1000.0
+  densification_view_avg_space_position_gradients_threshold: 1000.0
+  densification_view_space_position_gradients_threshold: 6.0e-06
+  enable_ellipsoid_offset: false
+  enable_sample_from_point: true
+  floater_depth_threshold: 100
+  floater_near_camrea_num_pixels_threshold: 300000
+  floater_num_pixels_threshold: 400000
+  gaussian_split_factor_phi: 1.6
+  iteration_start_remove_floater: 2000
+  num_iterations_densify: 100
+  num_iterations_reset_alpha: 400000
+  num_iterations_warm_up: 500
+  plot_densify_interval: 200
+  reset_alpha_value: -1.9
+  transparent_alpha_threshold: -2.0
+  under_reconstructed_move_factor: 100.0
+  under_reconstructed_num_pixels_threshold: 32
+enable_taichi_kernel_profiler: true
+feature_learning_rate: 0.005
+gaussian_point_cloud_scene_config: 
+  add_sphere: true
+  initial_alpha: -0.0
+  initial_covariance_ratio: 0.1
+  max_initial_covariance: 3000.0
+  max_num_points_ratio: 100.0
+  num_of_features: 56
+  num_points_sphere: 10000
+  sphere_radius_factor: 4.0
+half_downsample_factor_interval: 250
+increase_color_max_sh_band_interval: 1000
+initial_downsample_factor: 4 
+log_image_interval: 200
+log_loss_interval: 10
+log_metrics_interval: 100
+log_taichi_kernel_profile_interval: 1000
+log_validation_image: true
+loss_function_config: 
+  enable_regularization: false
+  lambda_depth_value: 0.1
+  lambda_smooth_value: 0.0005
+  lambda_value: 0.2
+  regularization_weight: 0.005
+noise_std_q: 0.0
+noise_std_t: 0.0
+num_iterations: 300001
+# output_model_dir: logs/replica_colmap/room_1_high_quality_500_frames_continuous
+pointcloud_parquet_path: /media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/data/replica_colmap/room_1_high_quality_500_frames/point_cloud.parquet # Needs to be oriented for GT
+position_learning_rate: 5.0e-05
+position_learning_rate_decay_interval: 100
+position_learning_rate_decay_rate: 0.9947
+print_metrics_to_console: false
+rasterisation_config: 
+  depth_to_sort_key_scale: 100.0
+  far_plane: 1000.0
+  near_plane: 0.001
+  rgb_only: false
+summary_writer_log_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment_continuous_imu_correction
+train_dataset_json_path: data/replica/room_1_500_frames_continuous_partial_lidar/train.json #train_groundtruth.json #
+val_dataset_json_path: data/replica/room_1_500_frames_continuous_partial_lidar/val.json  #val_groundtruth.json #
+val_interval: 10000

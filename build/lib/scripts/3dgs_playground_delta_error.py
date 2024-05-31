@@ -154,12 +154,12 @@ class PoseEstimator():
             errors_q = []
             optimized_poses_lie = np.zeros((len(d), 6))
             groundtruth_poses_lie = np.zeros((len(d), 6))
-
+            print("NUM SAMPLES: ", len(d))
             for count, view in enumerate(d):
                 print(
                     f"=================Image {count}========================")
-                if count <46:
-                    continue
+                # if count <38:
+                #     continue
 
                 # Load groundtruth image
                 ground_truth_image_path = view["image_path"]
@@ -244,7 +244,7 @@ class PoseEstimator():
                 groundtruth_poses_lie[count, :] = pose_groundtruth.to_tangent()
 
                 delta_numpy_array_q = np.random.normal(0, 0.05, (3, 1))
-                delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1))
+                delta_numpy_array_t = np.random.normal(0, 0.05, (3, 1)) # I was doing it with 0.05... too much
                 delta_numpy_array = np.vstack(
                     (delta_numpy_array_q, delta_numpy_array_t))
                 # delta_tensor = torch.zeros(
@@ -274,16 +274,16 @@ class PoseEstimator():
 
                 # Optimization starts
                 optimizer_delta_q = torch.optim.Adam(
-                    [delta_tensor_q], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2)  #
+                    [delta_tensor_q], lr=1e-3, betas=(0.9, 0.999))  #
                 optimizer_delta_t = torch.optim.Adam(
-                    [delta_tensor_t], lr=1e-3, betas=(0.9, 0.999), weight_decay=1e-2)  #
+                    [delta_tensor_t], lr=1e-3, betas=(0.9, 0.999))  #
                 scheduler = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_q, gamma=0.9947)
                 scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
                 num_coarse_epochs = 0  # 3000
-                num_epochs = 1000  # 1000
+                num_epochs = 3000  # 1000
                 downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,
@@ -366,7 +366,7 @@ class PoseEstimator():
                         optimizer_delta_q.step()
                         optimizer_delta_t.step()
 
-                    if epoch % 5 == 0:
+                    if epoch % 50 == 0:
                         scheduler.step()
                         for param_group in optimizer_delta_q.param_groups:
                             if param_group['lr'] < 1e-5:
@@ -501,7 +501,7 @@ class PoseEstimator():
                     if len(masked_difference) == 0:
                         L_DEPTH = torch.tensor(0)
 
-                    L = L1 + 0.1 * L_DEPTH
+                    L = L1 #+ 0.1 * L_DEPTH
 
                     L.backward()
 
@@ -509,7 +509,7 @@ class PoseEstimator():
                         optimizer_delta_q.step()
                         optimizer_delta_t.step()
 
-                    if epoch % 5 == 0:
+                    if epoch % 100 == 0:
                         scheduler.step()
                         for param_group in optimizer_delta_q.param_groups:
                             if param_group['lr'] < 1e-5:

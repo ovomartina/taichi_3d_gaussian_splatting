@@ -972,8 +972,8 @@ class GaussianPointCloudContinuousPoseRasterisation(torch.nn.Module):
                 grad_delta_pose_pointcloud_camera_depth = torch.hstack(
                     (grad_t_depth, grad_q_depth))
 
-                grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
-                    1,7) + grad_delta_pose_pointcloud_camera_depth.view( 1,7)
+                # grad_delta_pose_pointcloud_camera = grad_delta_pose_pointcloud_camera.view(
+                #     1,7) + grad_delta_pose_pointcloud_camera_depth.view( 1,7)
                     
                 if torch.isinf(grad_delta_pose_pointcloud_camera).any():
                     print("BACKWARD - INF detected")

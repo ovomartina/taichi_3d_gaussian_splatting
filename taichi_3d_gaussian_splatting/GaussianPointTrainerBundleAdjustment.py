@@ -311,6 +311,7 @@ class GaussianPointTrainerBundleAdjustment:
         groundtruth_t = [[] for _ in range(len(self.train_dataset))]
         self.errors_q = [[] for _ in range(len(self.train_dataset))]
         self.errors_t = [[] for _ in range(len(self.train_dataset))]
+        self.pose_estimate= [[] for _ in range(len(self.train_dataset))]
         pose_iterations_count = [0 for _ in range(len(self.train_dataset))]
         optimal_delta = [np.zeros((1, 6))
                          for _ in range(len(self.train_dataset))]
@@ -517,6 +518,7 @@ class GaussianPointTrainerBundleAdjustment:
                                   angle_difference: {angle_difference}")
 
                         self.errors_t[index].append(error_t)
+                        self.pose_estimate[index].append(current_pose)
 
                     gaussian_point_cloud_rasterisation_input = GaussianPointCloudPoseRasterisation.GaussianPointCloudPoseRasterisationInput(
                         point_cloud=self.scene.point_cloud,
@@ -560,6 +562,7 @@ class GaussianPointTrainerBundleAdjustment:
 
                     if pose_iterations_count[index] % 10 == 0:
                         self.q_scheduler_list[index].step()
+                    if pose_iterations_count[index] % 100 == 0:
                         self.t_scheduler_list[index].step()
 
                     # Set minimum learning rate (from BAD gaussians)
@@ -666,6 +669,9 @@ class GaussianPointTrainerBundleAdjustment:
                                 [tensor.item() for tensor in entry_t])
                             np.savetxt(
                                 f'errors/error_t_{i}.txt', numpy_array_t)
+                        
+                            current_estimate = np.array(self.pose_estimate[i])
+                            np.save(os.path.join(self.config.output_model_dir,f"pose_estimate_{i}.npy"), current_estimate)
 
                     del image_pred, image_depth, loss
                     # they use 7000 in paper, it's hard to set a interval so hard code it here
@@ -751,6 +757,10 @@ class GaussianPointTrainerBundleAdjustment:
             if lidar_pcd is not None:
                 lidar_measurement = Lidar(
                     lidar_pcd.cuda(), t_lidar_camera.cuda())
+                import open3d as o3d
+                transformed_lidar_pcd = o3d.geometry.PointCloud()
+                transformed_lidar_pcd.points = o3d.utility.Vector3dVector(lidar_pcd)
+                o3d.io.write_point_cloud("lidar_original.ply", transformed_lidar_pcd)
                 # # DEBUG =================================================================
                 # lidar_pointcloud_colmap = lidar_measurement.lidar_points_to_colmap(
                 #     lidar_measurement.point_cloud)
@@ -768,6 +778,7 @@ class GaussianPointTrainerBundleAdjustment:
                     (camera_info_original.camera_width,
                      camera_info_original.camera_height)
                 )
+                print("done")
 
             # Bundle adjustment
             depth_map_original = depth_map

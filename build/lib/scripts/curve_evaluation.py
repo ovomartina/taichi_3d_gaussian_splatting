@@ -6,11 +6,11 @@ from math import factorial
 
 M = (1/6)*torch.tensor([[5, 3, -3, 1],
                         [1, 3, 3, -2],
-                        [0, 0, 0, 1]], device="cuda")
+                        [0, 0, 0, 1]], device="cpu") #cuda
 
 M_z = torch.tensor([[2, 1, -2, 1],
                         [0, 1, 3, -2],
-                        [0, 0, -1, 1]], device="cuda")/factorial(2)
+                        [0, 0, -1, 1]], device="cpu")/factorial(2) #cuda
 _EPS = 1e-6
 
 

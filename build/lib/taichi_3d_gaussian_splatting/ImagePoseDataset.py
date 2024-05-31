@@ -124,8 +124,11 @@ class ImagePoseDataset(torch.utils.data.Dataset):
             image, depth, camera_info)
 
         # Get lidar file if available
-        lidar_path = self.df.iloc[idx]['lidar_path']
-        if lidar_path:
+        try:
+            lidar_path = self.df.iloc[idx]['lidar_path']
+        except:
+            lidar_path=None
+        if lidar_path is not None:
             lidar_pcd = o3d.io.read_point_cloud(
                 self.df.iloc[idx]['lidar_path'])
             lidar_pcd = torch.tensor(lidar_pcd.points)
