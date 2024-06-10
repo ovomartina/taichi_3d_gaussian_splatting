@@ -157,16 +157,22 @@ class GaussianPointTrainerContinuousBundleAdjustment:
         noise_std_q: float = 0.0
         noise_std_t: float = 0.0
         camera_pose_learning_rate_decay_rate: float = 0.97
-        # increase_ba_iterations_interval: int = 10000
-        start_pose_optimization: int = 7000  # 7000
+        start_pose_optimization: int = 7000  
+        delta_rotation_lr: float = 1e-4
+        delta_translation_lr: float = 1e-4
         save_position: int = 2000
+        transform:np.ndarray = np.array([[-0.07269247,  0.12011554, -0.46715833, -1.61574687],
+                              [0.48165509,  0.04348471, -0.06376747,  0.4119509],
+                              [0.02594256, -0.47077614, -0.12508256, -0.20647023],
+                              [0.,          0.,          0.,          1.]]) # Transformation of initial pointcloud
 
     def __init__(self, config: TrainConfig):
         self.config = config
         # create the log directory if it doesn't exist
         os.makedirs(self.config.summary_writer_log_dir, exist_ok=True)
-        
-        os.makedirs(os.path.join(self.config.summary_writer_log_dir,"pose_estimates"), exist_ok=True)
+
+        os.makedirs(os.path.join(self.config.summary_writer_log_dir,
+                    "pose_estimates"), exist_ok=True)
         if self.config.output_model_dir is None:
             self.config.output_model_dir = self.config.summary_writer_log_dir
             os.makedirs(self.config.output_model_dir, exist_ok=True)
@@ -185,9 +191,6 @@ class GaussianPointTrainerContinuousBundleAdjustment:
         )
 
         for i in range(len(self.train_dataset)):
-            # self.delta_list.append(torch.zeros((6, 1)))
-            # self.delta_list[i] = self.delta_list[i].cuda()
-            # self.delta_list[i].requires_grad = True
 
             self.delta_q_list.append(torch.zeros((3, 1), dtype=torch.float64))
             self.delta_q_list[i] = self.delta_q_list[i].cuda()
@@ -197,23 +200,8 @@ class GaussianPointTrainerContinuousBundleAdjustment:
             self.delta_t_list[i] = self.delta_t_list[i].cuda()
             self.delta_t_list[i].requires_grad = True
 
-        transform = np.array([[-0.07269247,  0.12011554, -0.46715833, -1.61574687],
-                              [0.48165509,  0.04348471, -0.06376747,  0.4119509],
-                              [0.02594256, -0.47077614, -0.12508256, -0.20647023],
-                              [0.,          0.,          0.,          1.]])
-
-        # DEBUG colmap =========================================================
-        # self.scene = GaussianPointCloudScene.from_parquet(
-        #     self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
-        # transform = np.eye(4)
         self.scene = GaussianPointCloudScene.from_parquet(
-            self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
-        # ======================================================================
-
-        # # DEBUG sanity check: load scene already trained 30k iterations
-        # scene = GaussianPointCloudScene.from_parquet(
-        #     "logs/replica_colmap/room_1_high_quality_500_frames_noisy_lidar/scene_30000.parquet", config=GaussianPointCloudScene.PointCloudSceneConfig(max_num_points_ratio=None))
-        # self.scene = merge_scenes([scene])
+            self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=self.config.transform)
 
         self.scene = self.scene.cuda()
         self.scene.point_cloud = self.scene.point_cloud.contiguous()
@@ -295,20 +283,18 @@ class GaussianPointTrainerContinuousBundleAdjustment:
         previous_problematic_iteration = -1000
 
         # If it's the first time loading index, load from json. Otherwise use last estimation
-        first_iteration = [True for _ in range(len(self.train_dataset))]
         initial_noisy_poses = [[] for _ in range(len(self.train_dataset))]
         initial_q = [np.array([0., 0., 0., 1.])
                      for _ in range(len(self.train_dataset))]
         initial_t = [np.array([0., 0., 0.])
                      for _ in range(len(self.train_dataset))]
-        # groundtruth_q = [[] for _ in range(len(self.train_dataset))]
-        # groundtruth_t = [[] for _ in range(len(self.train_dataset))]
+        
         groundtruth_q = []
         groundtruth_t = []
         self.errors_q = [[] for _ in range(len(self.train_dataset))]
         self.errors_t = [[] for _ in range(len(self.train_dataset))]
         pose_iterations_count = [0 for _ in range(len(self.train_dataset))]
-        self.pose_estimate= [[] for _ in range(len(self.train_dataset))]
+        self.pose_estimate = [[] for _ in range(len(self.train_dataset))]
 
         optimal_delta = [np.zeros((1, 6))
                          for _ in range(len(self.train_dataset))]
@@ -318,8 +304,7 @@ class GaussianPointTrainerContinuousBundleAdjustment:
         previous_smooth = None
         previous_depth_loss = None
         previous_ssim_loss = None
-        increase_pose_iterations_from = self.config.start_pose_optimization
-        count_10 = 0
+   
         df = pd.read_json(
             "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/data/replica_colmap/room_1_high_quality_500_frames/train_groundtruth.json", orient="records")
 
@@ -335,7 +320,7 @@ class GaussianPointTrainerContinuousBundleAdjustment:
             range(num_segments)).repeat(batch_size, 0)
 
         print("Index of segment: ", index_of_segment)
-        
+
         groundtruth_lie = np.zeros((N, 6))
         perturbed_lie = np.zeros((N, 6))
         for i in range(N):
@@ -355,16 +340,12 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                 R=perturbed_rotation, t=t_pointcloud_camera_current.squeeze(0).cpu().numpy())
             perturbed_lie[i, :] = (pose_perturbed.to_tangent(_EPS))
 
-        # groundtruth_bases = curve_evaluation.evaluate_spline_bases_lsq(
-        #     groundtruth_lie, batch_size, enable_zspline=True
-        # )
-        
         groundtruth_bases = groundtruth_lie
         bases = groundtruth_bases + \
-            np.random.normal(loc=0, scale=0.02, size=(
+            np.random.normal(loc=0, scale=self.config.noise_std_q, size=(
                 groundtruth_bases.shape))
 
-        N = num_segments*batch_size -4 
+        N = num_segments*batch_size - 4
         # Initialize optimizers
         pypose_bspline_knots = torch.zeros((bases.shape[0], 7))
         for base_number, base in enumerate(bases):
@@ -395,9 +376,9 @@ class GaussianPointTrainerContinuousBundleAdjustment:
             pypose_segment_base_t[s].requires_grad_()
             pypose_segment_base_q[s].requires_grad_()
             optimizer_bspline_bases_t.append(torch.optim.Adam(
-                [pypose_segment_base_t[s]], lr=1e-4, betas=(0.9, 0.999)))  # 1e-4, 1e-4 for z-spline without depth
+                [pypose_segment_base_t[s]], lr=self.config.delta_rotation_lr, betas=(0.9, 0.999))) 
             optimizer_bspline_bases_q.append(torch.optim.Adam(
-                [pypose_segment_base_q[s]], lr=1e-4, betas=(0.9, 0.999)))
+                [pypose_segment_base_q[s]], lr=self.config.delta_translation_lr, betas=(0.9, 0.999)))
 
             scheduler_t.append(torch.optim.lr_scheduler.ExponentialLR(
                 optimizer=optimizer_bspline_bases_t[s], gamma=0.9947))  # optimizer_bspline_bases_t[s]
@@ -441,9 +422,9 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                     )
                     for ss in range(num_segments):
                         pypose_segment_base_t[ss].data.copy_(pypose_bspline_knots_t[ss:ss +
-                                                                                                        4, :].data)
+                                                                                    4, :].data)
                         pypose_segment_base_q[ss].data.copy_(pypose_bspline_knots_q[ss:ss +
-                                                                                                        4, :].data)
+                                                                                    4, :].data)
 
                     current_pose_tensor = curve_evaluation.cubic_bspline_interpolation(
                         pp.SE3(torch.hstack(
@@ -483,8 +464,6 @@ class GaussianPointTrainerContinuousBundleAdjustment:
 
                         self.errors_t[index].append(error_t)
                         self.pose_estimate[index].append(current_pose)
-
-                    
 
                     current_pose_tensor = current_pose_tensor.cuda()
                     current_pose_tensor.requires_grad_()
@@ -554,9 +533,11 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                         for g in optimizer_bspline_bases_t[index_of_segment[index]].param_groups:
                             g['lr'] = 1e-5
 
-                    pypose_bspline_knots_t[segment:segment +4, :].data.copy_(pypose_segment_base_t[segment].data)
-                    pypose_bspline_knots_q[segment:segment +4, :].data.copy_(pypose_segment_base_q[segment].data)
-                    
+                    pypose_bspline_knots_t[segment:segment + 4,
+                                           :].data.copy_(pypose_segment_base_t[segment].data)
+                    pypose_bspline_knots_q[segment:segment + 4,
+                                           :].data.copy_(pypose_segment_base_q[segment].data)
+
                     magnitude_grad_viewspace_on_image = None
                     if self.adaptive_controller.input_data is not None:
                         magnitude_grad_viewspace_on_image = self.adaptive_controller.input_data.magnitude_grad_viewspace_on_image
@@ -566,18 +547,6 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                             self.scene, writer=self.writer, iteration=total_iteration_count)
                         self.writer.add_histogram(
                             "train/pixel_valid_point_count", pixel_valid_point_count, total_iteration_count)
-
-                    # Plot q and t gradients
-                    # try:
-                    #     self.writer.add_histogram(
-                    #         "grad/q_grad", self.delta_q_list[index].grad, total_iteration_count)
-                    #     self.writer.add_histogram(
-                    #         "grad/t_grad", self.delta_t_list[index].grad, total_iteration_count)
-                    # except Exception as e:
-                    #     print("Exception plotting instagram")
-                    #     print(e)
-                    #     print(self.delta_q_list[index].grad)
-                    #     print(self.delta_t_list[index].grad)
 
                     if total_iteration_count % self.config.log_loss_interval == 0:
                         self.writer.add_scalar(
@@ -653,8 +622,9 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                             np.savetxt(
                                 f'errors/error_t_{i}.txt', numpy_array_t)
                             current_estimate = np.array(self.pose_estimate[i])
-                            np.save(os.path.join(self.config.output_model_dir,f"pose_estimates/pose_estimate_{i}.npy"), current_estimate)
-                            
+                            np.save(os.path.join(self.config.output_model_dir,
+                                    f"pose_estimates/pose_estimate_{i}.npy"), current_estimate)
+
                     del image_pred, image_depth, loss
                     # they use 7000 in paper, it's hard to set a interval so hard code it here
                     if (total_iteration_count % self.config.val_interval == 0 and total_iteration_count != 0) or total_iteration_count == 7000 or total_iteration_count == 5000:
@@ -663,11 +633,7 @@ class GaussianPointTrainerContinuousBundleAdjustment:
 
                     total_iteration_count += 1
                     pose_iterations_count[index] += 1
-
-                # current_pose_estimate = sym.Pose3.retract(
-                # #     initial_noisy_poses[index], delta_numpy_array, _EPS)
-                # # current_q_estimate, current_t_estimate = extract_q_t_from_pose(
-                # #     current_pose_estimate)
+                    
                 try:
                     with torch.no_grad():
                         error_q_numpy = np.array(
@@ -715,12 +681,13 @@ class GaussianPointTrainerContinuousBundleAdjustment:
             #     current_pose)
 
             current_pose_tensor = curve_evaluation.cubic_bspline_interpolation(
-                        pp.SE3(torch.hstack(
-                            (pypose_segment_base_t[segment], pypose_segment_base_q[segment])).double()),
-                        u=torch.tensor([timestamp]).double(),
-                        enable_z_spline=True)
-            
-            current_q_estimate = torch.tensor(current_pose_tensor[0, 3:].unsqueeze(0))
+                pp.SE3(torch.hstack(
+                    (pypose_segment_base_t[segment], pypose_segment_base_q[segment])).double()),
+                u=torch.tensor([timestamp]).double(),
+                enable_z_spline=True)
+
+            current_q_estimate = torch.tensor(
+                current_pose_tensor[0, 3:].unsqueeze(0))
             current_t_estimate = torch.tensor(current_pose_tensor[0, :3])
 
             R_pointcloud_camera_perturbed = quaternion_to_rotation_matrix_torch(
@@ -792,8 +759,10 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                 #     self.optimizers_t_list[i].zero_grad()
 
                 if optimize_pose:
-                    current_q = torch.tensor(current_pose_tensor[0, 3:].clone().detach())
-                    current_t = torch.tensor(current_pose_tensor[0, :3].clone().detach())
+                    current_q = torch.tensor(
+                        current_pose_tensor[0, 3:].clone().detach())
+                    current_t = torch.tensor(
+                        current_pose_tensor[0, :3].clone().detach())
 
                     q_pointcloud_camera_gt_inverse = q_pointcloud_camera_gt * \
                         np.array([-1., -1., -1., 1.])

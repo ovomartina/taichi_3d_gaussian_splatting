@@ -60,6 +60,10 @@ class GaussianPointCloudTrainer:
         loss_function_config: LossFunction.LossFunctionConfig = LossFunction.LossFunctionConfig()
         noise_std_q: float = 0.0
         noise_std_t: float = 0.0
+        transform:np.ndarray = np.array([[-0.07269247,  0.12011554, -0.46715833, -1.61574687],
+                              [0.48165509,  0.04348471, -0.06376747,  0.4119509],
+                              [0.02594256, -0.47077614, -0.12508256, -0.20647023],
+                              [0.,          0.,          0.,          1.]]) # Transformation of initial pointcloud
 
     def __init__(self, config: TrainConfig):
         self.config = config
@@ -82,36 +86,10 @@ class GaussianPointCloudTrainer:
             noise_std_q=self.config.noise_std_q,
             noise_std_t=self.config.noise_std_t
         )
-        # Original Traslation: -1.59774687, 0.4059509, -0.21347023
-        transform = np.array([[-0.07453163,  0.11889557, -0.4673894,  -1.59774687],
-                              [0.48178008,  0.03977281, -0.06670892,   0.4059509],
-                              [0.02184015, -0.47162058, -0.12345461, -0.21347023],
-                              [0.,     0.,        0.,        1.]])
-        
-        #         [[-0.07269247  0.12011554 -0.46715833 -1.61574687]
-        #  [ 0.48165509  0.04348471 -0.06376747  0.4119509 ]
-        #  [ 0.02594256 -0.47077614 -0.12508256 -0.20647023]
-        #  [ 0.          0.          0.          1.        ]]
-        
-        transform[:3, :3] = transform[:3, :3]/0.487
-        print(transform)
-        t_pointcloud_pointcloudstar = np.array([-0.018, 0.006, 0.007]).T
-        R_torch = torch.from_numpy(transform[:3, :3]).view((1, 3, 3))
-        print(R_torch)
-        q = torch.nn.functional.normalize(
-            rotation_matrix_to_quaternion_torch(R_torch))
-        q = torch.nn.functional.normalize(
-            q + torch.tensor([0., 0.0025, 0.004, -0.0025]).T).detach().cpu().numpy()
-        transform[:3, :3] = 0.4878*quaternion_to_rotation_matrix_torch(
-            torch.from_numpy(q)).detach().cpu().numpy()
-        transform[:3, 3] = transform[:3, 3] + \
-            t_pointcloud_pointcloudstar  # 0.4878: scale factor
-        
-        # transform = np.eye(4)
-        print("TRANSFORM", transform)
+
 
         self.scene = GaussianPointCloudScene.from_parquet(
-            self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=transform)
+            self.config.pointcloud_parquet_path, config=self.config.gaussian_point_cloud_scene_config, transform=self.config.transform)
         self.scene = self.scene.cuda()
         self.adaptive_controller = GaussianPointAdaptiveController(
             config=self.config.adaptive_controller_config,
@@ -131,20 +109,51 @@ class GaussianPointCloudTrainer:
 
         self.best_psnr_score = 0.
 
-        # move scene to GPU
-
+    # @staticmethod
+    # def _downsample_image_and_camera_info(image: torch.Tensor, depth: torch.Tensor, camera_info: CameraInfo, downsample_factor: int):
+    #     camera_height = camera_info.camera_height // downsample_factor
+    #     camera_width = camera_info.camera_width // downsample_factor
+    #     image = transforms.functional.resize(image, size=(
+    #         camera_height, camera_width), antialias=True)
+    #     if depth is not None:
+    #         depth = transforms.functional.resize(depth, size=(
+    #             camera_height, camera_width), antialias=True)
+    #     camera_width = camera_width - camera_width % 16
+    #     camera_height = camera_height - camera_height % 16
+    #     image = image[:3, :camera_height, :camera_width].contiguous()
+    #     if depth is not None:
+    #         depth = depth[:3, :camera_height, :camera_width].contiguous()
+    #     camera_intrinsics = camera_info.camera_intrinsics
+    #     camera_intrinsics = camera_intrinsics.clone()
+    #     camera_intrinsics[0, 0] /= downsample_factor
+    #     camera_intrinsics[1, 1] /= downsample_factor
+    #     camera_intrinsics[0, 2] /= downsample_factor
+    #     camera_intrinsics[1, 2] /= downsample_factor
+    #     resized_camera_info = CameraInfo(
+    #         camera_intrinsics=camera_intrinsics,
+    #         camera_height=camera_height,
+    #         camera_width=camera_width,
+    #         camera_id=camera_info.camera_id)
+    #     return image, resized_camera_info, depth
+    
     @staticmethod
-    def _downsample_image_and_camera_info(image: torch.Tensor, depth: torch.Tensor, camera_info: CameraInfo, downsample_factor: int):
+    def _downsample_image_and_camera_info(image: torch.Tensor, depth: torch.Tensor, camera_info: CameraInfo, depth_map: torch.Tensor, downsample_factor: int):
         camera_height = camera_info.camera_height // downsample_factor
         camera_width = camera_info.camera_width // downsample_factor
         image = transforms.functional.resize(image, size=(
             camera_height, camera_width), antialias=True)
+        if depth_map is not None:
+            depth_map = transforms.functional.resize(depth_map, size=(
+                camera_height, camera_width), antialias=True)
         if depth is not None:
             depth = transforms.functional.resize(depth, size=(
                 camera_height, camera_width), antialias=True)
         camera_width = camera_width - camera_width % 16
         camera_height = camera_height - camera_height % 16
         image = image[:3, :camera_height, :camera_width].contiguous()
+        if depth_map is not None:
+            depth_map = depth_map[:3, :camera_height,
+                                  :camera_width].contiguous()
         if depth is not None:
             depth = depth[:3, :camera_height, :camera_width].contiguous()
         camera_intrinsics = camera_info.camera_intrinsics
@@ -158,7 +167,7 @@ class GaussianPointCloudTrainer:
             camera_height=camera_height,
             camera_width=camera_width,
             camera_id=camera_info.camera_id)
-        return image, resized_camera_info, depth
+        return image, resized_camera_info, depth, depth_map
 
     def train(self):
         # we don't use taichi fields, so we don't need to allocate memory, but taichi requires the memory to be allocated > 0

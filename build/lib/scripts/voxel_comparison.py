@@ -60,8 +60,8 @@ def compute_overlapping_voxels(voxel_grid1, voxel_grid2, output_directory_path):
     if not os.path.exists(output_directory):
         print("Creating output directory.....")
         os.makedirs(output_directory)
-    o3d.io.write_point_cloud(os.path.join(output_directory, "overlap_room_1_high_quality_500_frames_no_BA.ply"), intersection_point_cloud)
-    print(f"Writing overlapping pointcloud to {os.path.join(output_directory, 'overlap_room_1_high_quality_500_frames_no_BA.ply')}")
+    o3d.io.write_point_cloud(os.path.join(output_directory, "overlap_room_1_high_quality_500_frames_no_lidar.ply"), intersection_point_cloud)
+    print(f"Writing overlapping pointcloud to {os.path.join(output_directory, 'overlap_room_1_high_quality_500_frames_no_lidar.ply')}")
     print(overlap_centers)
     # Number of overlapping voxels
     num_overlapping_voxels = len(overlap_centers)

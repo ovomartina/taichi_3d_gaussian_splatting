@@ -147,7 +147,7 @@ class PoseEstimator():
 
     def start(self):
         num_epochs = 10
-        
+
         d = self.config.image_path_list
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
@@ -202,8 +202,9 @@ class PoseEstimator():
                     a2d, initial_pose.to_homogenous_matrix(), size=0.3, linewidth=0.3)
                 a2d.scatter(initial_pose.position()[
                             0], initial_pose.position()[1], color="black", s=2)
-                pose_estimate_current_pic[count].append(initial_pose.to_tangent())
-                
+                pose_estimate_current_pic[count].append(
+                    initial_pose.to_tangent())
+
             # Fit bspline and plot
             a2d.plot(blender_vertices_array[:, 0], -
                      blender_vertices_array[:, 2], color="green")
@@ -313,7 +314,8 @@ class PoseEstimator():
                 # initial_pose = sym.Pose3.retract(
                 #     pose_groundtruth, delta_numpy_array, epsilon)
 
-                initial_pose = sym.Pose3.from_tangent(pose_estimate_current_pic[count][0])
+                initial_pose = sym.Pose3.from_tangent(
+                    pose_estimate_current_pic[count][0])
                 initial_q, initial_t = extract_q_t_from_pose(initial_pose)
                 initial_q_numpy = initial_q.detach().cpu().numpy()
                 initial_t_numpy = initial_t.detach().cpu().numpy()
@@ -337,7 +339,7 @@ class PoseEstimator():
                 scheduler_t = torch.optim.lr_scheduler.ExponentialLR(
                     optimizer=optimizer_delta_t, gamma=0.9947)
                 # First: Coarse iterations
-                  # 1000
+                # 1000
                 downsample_factor = 2
                 ground_truth_image_downsampled, resized_camera_info_downsampled, _ = GaussianPointCloudTrainer._downsample_image_and_camera_info(ground_truth_image,
                                                                                                                                                  None,
@@ -520,7 +522,8 @@ class PoseEstimator():
                                 blender_vertices_array[:, 0], blender_vertices_array[:, 1], color="green")
 
                 # Save pose optimization
-                current_pose_estimate_current_pic = np.array(pose_estimate_current_pic[count])
+                current_pose_estimate_current_pic = np.array(
+                    pose_estimate_current_pic[count])
                 np.save(os.path.join(
                     self.output_path, f'epochs_delta_{count}/pose_optimization.npy'), current_pose_estimate_current_pic)
                 np.savetxt(os.path.join(
@@ -568,10 +571,11 @@ class PoseEstimator():
                     self.output_path, f'epochs_delta_{count}/error_t.out'), errors_t_current_pic, delimiter=',')
 
             # Save position
-            current_pose_estimate_current_pic = np.array(pose_estimate_current_pic)
+            current_pose_estimate_current_pic = np.array(
+                pose_estimate_current_pic)
             np.save(os.path.join(
                 self.output_path, f'pose_optimization.npy'), current_pose_estimate_current_pic)
-            
+
             errors_q_numpy = np.array(errors_q)
             errors_t_numpy = np.array(errors_t)
             errors_q_mean = np. mean(

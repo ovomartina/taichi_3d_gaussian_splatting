@@ -35,19 +35,26 @@ class LossFunction(nn.Module):
                            data_range=1, size_average=True)
         
         masked_difference = torch.abs(predicted_depth - ground_truth_depth)[depth_mask]
+        print(masked_difference)
         L_DEPTH = masked_difference.mean()
+        L_SMOOTH = self.smoothing_loss(ground_truth_image, predicted_depth) 
         if len(masked_difference) == 0:
-            L_DEPTH = torch.tensor(0)  
-        
-        
-        L_SMOOTH = self.smoothing_loss(ground_truth_image, predicted_depth)
-        L = (1 - self.config.lambda_value) * L1 + \
-            self.config.lambda_value * LD_SSIM  + \
-            self.config.lambda_depth_value * L_DEPTH +\
-            self.config.lambda_smooth_value * L_SMOOTH
-        if pointcloud_features is not None and self.config.enable_regularization:
-            regularization_loss = self._regularization_loss(point_invalid_mask, pointcloud_features)
-            L = L + self.config.regularization_weight * regularization_loss
+            L_DEPTH = torch.tensor(0) 
+            
+            L = (1 - self.config.lambda_value) * L1 + \
+                self.config.lambda_value * LD_SSIM 
+            if pointcloud_features is not None and self.config.enable_regularization:
+                regularization_loss = self._regularization_loss(point_invalid_mask, pointcloud_features)
+                L = L + self.config.regularization_weight * regularization_loss
+        else:
+            # L_SMOOTH = self.smoothing_loss(ground_truth_image, predicted_depth)
+            L = (1 - self.config.lambda_value) * L1 + \
+                self.config.lambda_value * LD_SSIM  + \
+                self.config.lambda_depth_value * L_DEPTH +\
+                self.config.lambda_smooth_value * L_SMOOTH
+            if pointcloud_features is not None and self.config.enable_regularization:
+                regularization_loss = self._regularization_loss(point_invalid_mask, pointcloud_features)
+                L = L + self.config.regularization_weight * regularization_loss
         return L, L1, LD_SSIM, L_DEPTH, L_SMOOTH
     
     def _regularization_loss(self, point_invalid_mask, pointcloud_features):

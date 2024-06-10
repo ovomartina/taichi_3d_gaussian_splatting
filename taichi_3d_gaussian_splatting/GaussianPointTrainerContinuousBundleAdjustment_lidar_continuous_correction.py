@@ -632,10 +632,19 @@ class GaussianPointTrainerContinuousBundleAdjustment:
                     if len(image_gt.shape) == 3:
                         image_gt = image_gt.unsqueeze(0)
 
-                    loss = 0.8*torch.abs(image_pred - image_gt).mean() + 0.2*(1 - ssim(image_pred, image_gt,
-                                                                                       data_range=1, size_average=True))
+                    # loss = 0.8*torch.abs(image_pred - image_gt).mean() + 0.2*(1 - ssim(image_pred, image_gt,
+                    #                                                                    data_range=1, size_average=True))
 
+                    loss, l1_loss, ssim_loss, depth_loss, smooth_loss = self.loss_function(
+                        image_pred,
+                        image_gt,
+                        image_depth,
+                        depth_map,
+                        depth_mask,
+                        point_invalid_mask=self.scene.point_invalid_mask,
+                        pointcloud_features=self.scene.point_cloud_features)
                     loss.backward()
+                    
                     print(f"self.delta_q_list[index].grad: \n\t{self.delta_q_list[index].grad}\n \
                         self.delta_t_list[index].grad: \n\t{self.delta_t_list[index].grad}")
                     

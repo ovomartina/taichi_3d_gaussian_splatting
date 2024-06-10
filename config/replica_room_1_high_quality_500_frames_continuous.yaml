@@ -58,7 +58,7 @@ rasterisation_config:
   far_plane: 1000.0
   near_plane: 0.001
   rgb_only: false
-summary_writer_log_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment_continuous_imu_correction
-train_dataset_json_path: data/replica/room_1_500_frames_continuous_partial_lidar/train.json #train_groundtruth.json #
-val_dataset_json_path: data/replica/room_1_500_frames_continuous_partial_lidar/val.json  #val_groundtruth.json #
+summary_writer_log_dir: logs/replica_colmap/room_1_high_quality_500_frames_bundle_adjustment_continuous_lidar_backprop
+train_dataset_json_path: data/replica/room_1_500_frames_continuous/train.json #train_groundtruth.json #
+val_dataset_json_path: data/replica/room_1_500_frames_continuous/val.json  #val_groundtruth.json #
 val_interval: 10000

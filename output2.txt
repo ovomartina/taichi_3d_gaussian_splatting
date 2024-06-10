@@ -1,0 +1,30 @@
+nohup: ignoring input
+[Taichi] version 1.7.0, llvm 15.0.4, commit 2fd24490, linux, python 3.10.13
+Traceback (most recent call last):
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/loaders.py", line 533, in fromdict
+    load = _CLASS_TO_LOAD_FUNC[cls]
+KeyError: <class 'taichi_3d_gaussian_splatting.GaussianPointTrainer.GaussianPointCloudTrainer.TrainConfig'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/media/scratch1/mroncoroni/git/taichi_3d_gaussian_splatting/gaussian_point_train.py", line 21, in <module>
+    config = GaussianPointCloudTrainer.TrainConfig.from_yaml_file(
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/wizard_mixins.py", line 147, in from_yaml_file
+    return cls.from_yaml(in_file, decoder=decoder,
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/wizard_mixins.py", line 136, in from_yaml
+    return fromdict(cls, o) if isinstance(o, dict) else fromlist(cls, o)
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/loaders.py", line 535, in fromdict
+    load = load_func_for_dataclass(cls)
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/loaders.py", line 582, in load_func_for_dataclass
+    field_to_parser = dataclass_field_to_load_parser(cls_loader, cls, config)
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/class_helper.py", line 120, in dataclass_field_to_load_parser
+    return _setup_load_config_for_cls(cls_loader, cls, config, save)
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/class_helper.py", line 189, in _setup_load_config_for_cls
+    name_to_parser[f.name] = cls_loader.get_parser_for_annotation(
+  File "/home/mroncoroni/anaconda3/envs/taichi_3dgs/lib/python3.10/site-packages/dataclass_wizard/loaders.py", line 438, in get_parser_for_annotation
+    raise ParseError(
+dataclass_wizard.errors.ParseError: Failure parsing field `None` in class `None`. Expected a type ndarray, got NoneType.
+  value: None
+  error: Provided type is not currently supported.
+  unsupported_type: <class 'numpy.ndarray'>

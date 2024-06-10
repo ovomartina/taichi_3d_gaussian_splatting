@@ -182,7 +182,9 @@ def main():
 
     # Compute chamfer sitance for each full scan
     gyro_noise = np.linspace(-0.5, 5.5, 5)*1e-4 + gyroscope_noise_density
+    gyro_noise = np.array([gyroscope_noise_density])
     accelerometer_noise = np.linspace(-0.5, 5.5, 5)*1e-3 + accelerometer_noise_density
+    accelerometer_noise = np.array([accelerometer_noise_density])
     G, A = np.meshgrid(gyro_noise, accelerometer_noise)
     errors = np.zeros(shape=(5, 5))
     
