@@ -204,6 +204,7 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
         previous_smooth = None
         previous_depth_loss = None
         previous_ssim_loss = None
+        lidar_pose_backpropagation=False
 
         while total_iteration_count < self.config.num_iterations:
             image_gt, q_pointcloud_camera_current, t_pointcloud_camera_current, camera_info, depth_gt, lidar_pcd, T_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera_gt, t_pointcloud_camera_gt = next(
@@ -236,10 +237,8 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
 
                 # Save optimal transformation for later
                 delta_pose_2 = sym.Pose3.local_coordinates(
-                    initial_noisy_poses[index], groundtruth_pose)  # THIS IS CORRECT
+                    initial_noisy_poses[index], groundtruth_pose)  
                 optimal_delta[index] = (delta_pose_2).reshape((1, 6))
-                debug = sym.Pose3.retract(
-                    initial_noisy_poses[index], optimal_delta[index].reshape((6, 1)),  0.0000001)  # THIS IS CORRECT
 
                 # set to GT
                 initial_q[index] = noisy_q_pointcloud_camera_numpy
@@ -260,8 +259,9 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
                 error_t = torch.linalg.vector_norm(
                     torch.tensor(initial_t[index]) - groundtruth_t[index])
 
-                self.errors_q[index].append(error_q)
-                self.errors_t[index].append(error_t)
+                # DEGUB
+                # self.errors_q[index].append(error_q)
+                # self.errors_t[index].append(error_t)
 
             else:
                 # delta_numpy_array = self.delta_list[index].clone(
@@ -392,23 +392,27 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
                     if len(image_gt.shape) == 3:
                         image_gt = image_gt.unsqueeze(0)
 
-                    if lidar_measurement is None:
-                        loss = self.config.loss_function_config.lambda_value*torch.abs(image_pred - image_gt).mean() + (1-self.config.loss_function_config.lambda_value)*(1 - ssim(image_pred, image_gt,
-                                                                                        data_range=1, size_average=True))
+                    if lidar_pose_backpropagation:
+                        if lidar_measurement is None:
+                            loss = self.config.loss_function_config.lambda_value*torch.abs(image_pred - image_gt).mean() + (1-self.config.loss_function_config.lambda_value)*(1 - ssim(image_pred, image_gt,
+                                                                                            data_range=1, size_average=True))
+                        else:
+                            image_depth = image_depth.cuda()
+                            image_depth = image_depth / torch.max(image_depth)
+                            depth_mask = torch.where(depth_map >= 0, True, False)
+                            depth_map = depth_map / torch.max(depth_map)
+                    
+                            loss, l1_loss, ssim_loss, depth_loss, smooth_loss = self.loss_function(
+                            image_pred,
+                            image_gt,
+                            image_depth,
+                            depth_map,
+                            depth_mask,
+                            point_invalid_mask=self.scene.point_invalid_mask,
+                            pointcloud_features=self.scene.point_cloud_features)  
                     else:
-                        image_depth = image_depth.cuda()
-                        image_depth = image_depth / torch.max(image_depth)
-                        depth_mask = torch.where(depth_map >= 0, True, False)
-                        depth_map = depth_map / torch.max(depth_map)
-                
-                        loss, l1_loss, ssim_loss, depth_loss, smooth_loss = self.loss_function(
-                        image_pred,
-                        image_gt,
-                        image_depth,
-                        depth_map,
-                        depth_mask,
-                        point_invalid_mask=self.scene.point_invalid_mask,
-                        pointcloud_features=self.scene.point_cloud_features)  
+                        loss = self.config.loss_function_config.lambda_value*torch.abs(image_pred - image_gt).mean() + (1-self.config.loss_function_config.lambda_value)*(1 - ssim(image_pred, image_gt,
+                                                                                            data_range=1, size_average=True))
                                    
                     loss.backward()
                     
@@ -514,20 +518,20 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
 
                     if total_iteration_count % self.config.save_position == 0:
                         for i in range(len(self.errors_q)):
-                            # Save position
-                            # Accessing the first entry of the list
-                            entry_q = self.errors_q[i]
-                            numpy_array_q = np.array(
-                                [tensor.item() for tensor in entry_q])
-                            np.savetxt(
-                                f'errors/error_q_{i}.txt', numpy_array_q)
+                            # # Save position
+                            # # Accessing the first entry of the list
+                            # entry_q = self.errors_q[i]
+                            # numpy_array_q = np.array(
+                            #     [tensor.item() for tensor in entry_q])
+                            # np.savetxt(
+                            #     f'errors/error_q_{i}.txt', numpy_array_q)
 
-                            # Accessing the first entry of the list
-                            entry_t = self.errors_t[i]
-                            numpy_array_t = np.array(
-                                [tensor.item() for tensor in entry_t])
-                            np.savetxt(
-                                f'errors/error_t_{i}.txt', numpy_array_t)
+                            # # Accessing the first entry of the list
+                            # entry_t = self.errors_t[i]
+                            # numpy_array_t = np.array(
+                            #     [tensor.item() for tensor in entry_t])
+                            # np.savetxt(
+                            #     f'errors/error_t_{i}.txt', numpy_array_t)
                         
                             current_estimate = np.array(self.pose_estimate[i])
                             np.save(os.path.join(self.config.output_model_dir,f"pose_estimate_{i}.npy"), current_estimate)
@@ -545,45 +549,42 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
                     (self.delta_q_list[index], self.delta_t_list[index]), axis=0).contiguous()
                 delta_numpy_array = delta_tensor.clone(
                 ).detach().cpu().numpy()
-                # current_pose_estimate = sym.Pose3.retract(
-                #     initial_noisy_poses[index], delta_numpy_array, _EPS)
-                # current_q_estimate, current_t_estimate = extract_q_t_from_pose(
-                #     current_pose_estimate)
-                try:
-                    with torch.no_grad():
-                        error_q_numpy = np.array(
-                            self.errors_q[index]).T   
-                        error_q_numpy = np.expand_dims(error_q_numpy, axis=0)
-                        plt.plot(np.squeeze(
-                            error_q_numpy[:], axis=0), color='red', label='error')
-                        plt.legend()
-                        plt.title("Rotational error")
-                        buf = io.BytesIO()
-                        plt.savefig(buf, format='jpeg')
-                        buf.seek(0)
-                        image_q = PIL.Image.open(buf)
-                        image_q = ToTensor()(image_q)
-                        self.writer.add_image(
-                            f"train/error_q_{index}", image_q, total_iteration_count)
-                        plt.clf()
 
-                        error_t_numpy = np.array(
-                            self.errors_t[index]).T   # Epochs x 1
-                        error_t_numpy = np.expand_dims(error_t_numpy, axis=0)
-                        plt.plot(np.squeeze(
-                            error_t_numpy[:], axis=0), color='red', label='error')
-                        plt.legend()
-                        plt.title("Translational error")
-                        buf = io.BytesIO()
-                        plt.savefig(buf, format='jpeg')
-                        buf.seek(0)
-                        image_t = PIL.Image.open(buf)
-                        image_t = ToTensor()(image_t)
-                        self.writer.add_image(
-                            f"train/error_t_{index}", image_t, total_iteration_count)
-                        plt.clf()
-                except:
-                    pass
+                # try:
+                #     with torch.no_grad():
+                #         error_q_numpy = np.array(
+                #             self.errors_q[index]).T   
+                #         error_q_numpy = np.expand_dims(error_q_numpy, axis=0)
+                #         plt.plot(np.squeeze(
+                #             error_q_numpy[:], axis=0), color='red', label='error')
+                #         plt.legend()
+                #         plt.title("Rotational error")
+                #         buf = io.BytesIO()
+                #         plt.savefig(buf, format='jpeg')
+                #         buf.seek(0)
+                #         image_q = PIL.Image.open(buf)
+                #         image_q = ToTensor()(image_q)
+                #         self.writer.add_image(
+                #             f"train/error_q_{index}", image_q, total_iteration_count)
+                #         plt.clf()
+
+                #         error_t_numpy = np.array(
+                #             self.errors_t[index]).T   # Epochs x 1
+                #         error_t_numpy = np.expand_dims(error_t_numpy, axis=0)
+                #         plt.plot(np.squeeze(
+                #             error_t_numpy[:], axis=0), color='red', label='error')
+                #         plt.legend()
+                #         plt.title("Translational error")
+                #         buf = io.BytesIO()
+                #         plt.savefig(buf, format='jpeg')
+                #         buf.seek(0)
+                #         image_t = PIL.Image.open(buf)
+                #         image_t = ToTensor()(image_t)
+                #         self.writer.add_image(
+                #             f"train/error_t_{index}", image_t, total_iteration_count)
+                #         plt.clf()
+                # except:
+                #     pass
 
             # Set lidar position to current estimate
             delta_tensor = torch.cat(
@@ -867,7 +868,9 @@ class GaussianPointTrainerBundleAdjustment(GaussianPointCloudTrainer):
 
             print(f"TOTAL ITERATION COUNT: {total_iteration_count}")
 
-            del image_gt, depth_gt, q_pointcloud_camera, t_pointcloud_camera, camera_info, gaussian_point_cloud_rasterisation_input, lidar_measurement, visible_points, depth_map
+            del image_gt, depth_gt, q_pointcloud_camera, t_pointcloud_camera, camera_info, gaussian_point_cloud_rasterisation_input, lidar_measurement, visible_points, depth_map, depth_mask, \
+                q_pointcloud_camera_current, t_pointcloud_camera_current, lidar_pcd, T_lidar_camera, T_pointcloud_camera, index, q_pointcloud_camera_gt, t_pointcloud_camera_gt, \
+                delta_tensor
     
     def validation(self, val_data_loader, iteration, initial_q, initial_t):
         with torch.no_grad():

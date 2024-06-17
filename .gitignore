@@ -12,3 +12,5 @@ output.txt
 save_pid.txt
 output/
 scripts/3dgs_playground_output/
+scripts/output
+errors/*
